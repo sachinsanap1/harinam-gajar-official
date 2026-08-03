@@ -208,6 +208,7 @@ def register_cli(app):
         add_column_if_missing("kirtankar_profiles", "photo_updated_at", "DATETIME")
         add_column_if_missing("devotional_texts", "audio_data", "BLOB")
         add_column_if_missing("devotional_texts", "audio_mimetype", "VARCHAR(100)")
+        add_column_if_missing("devotional_texts", "audio_public_id", "VARCHAR(300)")
         db.session.commit()
 
         db.create_all()  # picks up the new kirtankar_videos table
