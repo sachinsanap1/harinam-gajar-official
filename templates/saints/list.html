@@ -18,7 +18,11 @@
   <div class="card-grid">
     {% for s in saints %}
     <a class="post-card" href="{{ url_for('saints.detail', slug=s.slug) }}">
-      <div class="thumb-wrap">{% if s.photo_url %}<img src="{{ s.photo_url }}" alt="{{ s.name }}">{% endif %}</div>
+      <div class="thumb-wrap">
+        {% if s.photo_data %}<img src="{{ url_for('saints.photo', saint_id=s.id, v=photo_version(s.photo_updated_at)) }}" alt="{{ s.name }}">
+        {% elif s.photo_url %}<img src="{{ s.photo_url }}" alt="{{ s.name }}">
+        {% endif %}
+      </div>
       <div class="card-body">
         <h3>{{ s.name }}</h3>
         {% if s.short_bio %}<p style="font-size:0.85rem; opacity:0.75;">{{ s.short_bio }}</p>{% endif %}
