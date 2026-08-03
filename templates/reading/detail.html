@@ -1,223 +1,46 @@
 {% extends "base.html" %}
-
-{% block title %}
-{{ text.title }} — {{ site_name }}
-{% endblock %}
-
+{% block title %}{{ text.title }} — {{ site_name }}{% endblock %}
 {% block content %}
+<article class="container" style="max-width:720px;" id="reading-article">
+  <span class="pill pill-draft">{{ category_labels.get(text.category, text.category) }}</span>
+  <h1 class="display" style="font-size:2rem; margin-top:10px;">{{ text.title }}</h1>
+  {% if text.source %}<p style="opacity:0.55; font-size:0.85rem;">स्रोत: {{ text.source }}</p>{% endif %}
 
-<article class="container" style="max-width:760px;" id="reading-article">
+  <div style="display:flex; gap:10px; margin:18px 0; flex-wrap:wrap; align-items:center;">
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="changeFontSize(-2)">A-</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="changeFontSize(2)">A+</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="copyText()">📋 Copy</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="window.print()">🖨 Print</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="shareText()">🔗 Share</button>
+    {% if text.audio_data %}<audio controls src="{{ url_for('reading.audio', text_id=text.id) }}" style="height:32px;"></audio>
+    {% elif text.audio_url %}<audio controls src="{{ text.audio_url }}" style="height:32px;"></audio>{% endif %}
+  </div>
 
-    <!-- Category -->
-    <span class="pill pill-draft">
-        {{ category_labels.get(text.category, text.category) }}
-    </span>
+  <div id="reading-text" style="white-space:pre-line; line-height:2.1; font-size:1.15rem;">{{ text.content_marathi }}</div>
 
-    <!-- Title -->
-    <h1 class="display" style="font-size:2rem;margin-top:12px;color:red;">
-        {{ text.title }}
-    </h1>
-
-    <!-- Source -->
-    {% if text.source %}
-    <p style="opacity:.65;font-size:.9rem;margin-bottom:20px;">
-        स्रोत : {{ text.source }}
-    </p>
-    {% endif %}
-
-    <!-- Controls -->
-    <div style="
-        display:flex;
-        gap:10px;
-        flex-wrap:wrap;
-        align-items:center;
-        margin-bottom:20px;
-    ">
-
-        <button class="btn btn-outline" onclick="changeFont(-2)">
-            A-
-        </button>
-
-        <button class="btn btn-outline" onclick="changeFont(2)">
-            A+
-        </button>
-
-        <button class="btn btn-outline" onclick="copyText()">
-            📋 Copy
-        </button>
-
-        <button class="btn btn-outline" onclick="window.print()">
-            🖨 Print
-        </button>
-
-        <button class="btn btn-outline" onclick="sharePage()">
-            🔗 Share
-        </button>
-
-        </div>
-    
-        <!-- DEBUG -->
-        
-        <div style="background:#ffeeba;padding:10px;margin-bottom:20px;">
-            <b>DEBUG</b><br>
-        
-            text.id = {{ text.id }}<br>
-        
-            audio_data exists =
-            {{ text.audio_data is not none }}<br>
-        
-            audio_url =
-            {{ text.audio_url }}<br>
-        
-            audio_mimetype =
-            {{ text.audio_mimetype }}
-        </div>
-        
-        {% if text.audio_data is not none %}
-        
-        <p style="color:green">
-        Rendering DATABASE audio
-        </p>
-        
-        <audio
-            controls
-            preload="metadata"
-            src="{{ url_for('reading.audio', text_id=text.id) }}"
-            style="width:100%;">
-        </audio>
-        
-        {% elif text.audio_url %}
-        
-        <p style="color:blue">
-        Rendering URL audio
-        </p>
-        
-        <audio
-            controls
-            preload="metadata"
-            src="{{ text.audio_url }}"
-            style="width:100%;">
-        </audio>
-        
-        {% else %}
-        
-        <p style="color:red">
-        NO AUDIO FOUND
-        </p>
-        
-        {% endif %}
-    <!-- Reading Text -->
-
-    <div id="reading-text"
-         style="
-            white-space:pre-line;
-            font-size:20px;
-            line-height:2;
-         ">
-
-        {{ text.content_marathi }}
-
-    </div>
-
-    <!-- Previous / Next -->
-
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        margin-top:50px;
-        border-top:1px solid #ddd;
-        padding-top:20px;
-    ">
-
-        {% if prev_text %}
-            <a href="{{ url_for('reading.detail', slug=prev_text.slug) }}">
-                ← {{ prev_text.title }}
-            </a>
-        {% else %}
-            <span></span>
-        {% endif %}
-
-        {% if next_text %}
-            <a href="{{ url_for('reading.detail', slug=next_text.slug) }}">
-                {{ next_text.title }} →
-            </a>
-        {% endif %}
-
-    </div>
-
+  <div style="display:flex; justify-content:space-between; margin-top:40px; padding-top:20px; border-top:1px solid var(--ivory-deep);">
+    {% if prev_text %}<a href="{{ url_for('reading.detail', slug=prev_text.slug) }}">← {{ prev_text.title }}</a>{% else %}<span></span>{% endif %}
+    {% if next_text %}<a href="{{ url_for('reading.detail', slug=next_text.slug) }}">{{ next_text.title }} →</a>{% endif %}
+  </div>
 </article>
 
 <script>
-
-let currentFont = 20;
-
-function changeFont(delta){
-
-    currentFont += delta;
-
-    if(currentFont < 14)
-        currentFont = 14;
-
-    if(currentFont > 40)
-        currentFont = 40;
-
-    document.getElementById("reading-text").style.fontSize =
-        currentFont + "px";
+function changeFontSize(delta) {
+  const el = document.getElementById('reading-text');
+  const current = parseFloat(window.getComputedStyle(el).fontSize);
+  el.style.fontSize = (current + delta) + 'px';
 }
-
-function copyText(){
-
-    navigator.clipboard.writeText(
-        document.getElementById("reading-text").innerText
-    ).then(function(){
-
-        alert("मजकूर कॉपी झाला.");
-
-    });
-
+function copyText() {
+  navigator.clipboard.writeText(document.getElementById('reading-text').innerText);
+  alert('मजकूर कॉपी झाला.');
 }
-
-function sharePage(){
-
-    if(navigator.share){
-
-        navigator.share({
-            title: document.title,
-            url: window.location.href
-        });
-
-    }else{
-
-        navigator.clipboard.writeText(window.location.href);
-
-        alert("लिंक कॉपी झाली.");
-
-    }
-
+function shareText() {
+  if (navigator.share) {
+    navigator.share({ title: document.title, url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert('लिंक कॉपी झाली.');
+  }
 }
-
-// Debug audio
-
-const audio = document.getElementById("audioPlayer");
-
-if(audio){
-
-    audio.addEventListener("loadedmetadata", function(){
-
-        console.log("Duration:", audio.duration);
-
-    });
-
-    audio.addEventListener("error", function(){
-
-        console.log(audio.error);
-
-        alert("Audio failed to load.");
-
-    });
-
-}
-
 </script>
-
 {% endblock %}
