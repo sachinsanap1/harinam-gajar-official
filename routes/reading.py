@@ -105,61 +105,34 @@ def detect_audio_mimetype(data, saved_mimetype=None):
 @reading_bp.route("/<int:text_id>/audio")
 def audio(text_id):
 
-    text = DevotionalText.query.get_or_404(
-        text_id
-    )
+    text = DevotionalText.query.get_or_404(text_id)
 
     if not text.audio_data:
         abort(404)
 
-    # PostgreSQL BYTEA can return memoryview
-    data = bytes(
-        text.audio_data
-    )
+    # PostgreSQL BYTEA -> normal bytes
+    data = bytes(text.audio_data)
 
-    total_length = len(data)
-
-    if total_length == 0:
+    if len(data) == 0:
         abort(404)
 
-    # Detect the real audio type
-    mimetype = detect_audio_mimetype(
+    # Your downloaded file is confirmed as MP3
+    mimetype = "audio/mpeg"
+
+    response = Response(
         data,
-        text.audio_mimetype
+        status=200,
+        content_type=mimetype,
+        direct_passthrough=True,
     )
 
-    range_header = request.headers.get(
-        "Range"
-    )
+    response.headers["Content-Type"] = "audio/mpeg"
+    response.headers["Content-Length"] = str(len(data))
+    response.headers["Accept-Ranges"] = "bytes"
+    response.headers["Content-Disposition"] = "inline"
+    response.headers["Cache-Control"] = "no-store"
 
-    # =====================================================
-    # FULL AUDIO RESPONSE
-    # =====================================================
-
-    if not range_header:
-
-        response = Response(
-            data,
-            status=200,
-            content_type=mimetype
-        )
-
-        response.headers[
-            "Content-Length"
-        ] = str(
-            total_length
-        )
-
-        response.headers[
-            "Accept-Ranges"
-        ] = "bytes"
-
-        response.headers[
-            "Cache-Control"
-        ] = "no-cache"
-
-        return response
-
+    return response
     # =====================================================
     # RANGE AUDIO RESPONSE
     # =====================================================
