@@ -55,7 +55,11 @@
         </button>
 
     </div>
-
+    <p style="color:red">
+    audio_data = {{ text.audio_data is not none }}
+    <br>
+    audio_url = {{ text.audio_url }}
+    </p>
     <!-- Audio -->
 
     {% if text.audio_data %}
