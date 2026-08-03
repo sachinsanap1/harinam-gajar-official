@@ -3,12 +3,37 @@
 {% block admin_content %}
 <h1>{{ 'Edit Saint Profile' if saint else 'New Saint Profile' }}</h1>
 <p style="opacity:0.65; font-size:0.85rem; max-width:640px;">Use historically responsible wording. Leave a field blank rather than guessing — mark uncertain dates as such directly in the text (e.g. "c. 1275 (dates debated)").</p>
-<form method="POST" style="max-width:680px;">
+<form method="POST" enctype="multipart/form-data" style="max-width:680px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-field"><label>Name</label><input type="text" name="name" value="{{ saint.name if saint else '' }}" required></div>
   <div class="form-field"><label>URL slug (optional — auto-generated from name)</label><input type="text" name="slug" value="{{ saint.slug if saint else '' }}"></div>
   <div class="form-field"><label>Alternative names</label><input type="text" name="alt_names" value="{{ saint.alt_names if saint else '' }}"></div>
-  <div class="form-field"><label>Photo URL</label><input type="text" name="photo_url" value="{{ saint.photo_url if saint else '' }}"></div>
+  <div class="form-field">
+    <label>Photo</label>
+    <div style="margin-bottom:8px;">
+      <img id="photo-preview"
+           {% if saint and saint.photo_data %}
+           src="{{ url_for('saints.photo', saint_id=saint.id, v=photo_version(saint.photo_updated_at)) }}"
+           style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);"
+           {% elif saint and saint.photo_url %}
+           src="{{ saint.photo_url }}"
+           style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);"
+           {% else %}
+           style="display:none; width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);"
+           {% endif %}
+           alt="{{ saint.name if saint else '' }}">
+    </div>
+    {% if saint and (saint.photo_data or saint.photo_url) %}
+    <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" name="remove_photo" style="width:auto;"> Remove current photo
+    </label>
+    {% endif %}
+    <input type="file" name="photo" id="photo-input" accept="image/jpeg,image/png,image/webp,image/gif">
+    <small style="opacity:0.6; display:block; margin-top:4px;">
+      JPEG, PNG, WEBP or GIF, up to 4 MB.
+      {% if saint and saint.photo_data %}Leave blank to keep the current photo.{% endif %}
+    </small>
+  </div>
   <div class="form-field"><label>Tradition / category</label><input type="text" name="tradition" value="{{ saint.tradition if saint else '' }}" placeholder="e.g. Warkari"></div>
   <div class="form-field"><label>Birth information</label><input type="text" name="birth_info" value="{{ saint.birth_info if saint else '' }}" placeholder="Mark uncertainty explicitly if applicable"></div>
   <div class="form-field"><label>Samadhi information</label><input type="text" name="samadhi_info" value="{{ saint.samadhi_info if saint else '' }}"></div>
@@ -22,4 +47,18 @@
   <div class="form-field"><label><input type="checkbox" name="is_published" {% if not saint or saint.is_published %}checked{% endif %} style="width:auto;"> Published</label></div>
   <button class="btn btn-primary" type="submit">Save</button>
 </form>
+
+<script>
+document.getElementById('photo-input').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  const img = document.getElementById('photo-preview');
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    img.src = ev.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+</script>
 {% endblock %}
