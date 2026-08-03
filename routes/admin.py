@@ -24,6 +24,23 @@ def slugify(text):
     return re.sub(r"[\s_-]+", "-", text).strip("-")
 
 
+_PLACEHOLDER_TEXT = {"none", "null", "n/a", "na", "undefined"}
+
+
+def clean_text(value):
+    """
+    Strips whitespace and treats literal placeholder words like "None" or
+    "null" as blank. These sometimes get pasted in wholesale from
+    AI-generated draft bios that print "None" for a field left empty —
+    without this, "None" gets saved as if it were a real value (e.g. a
+    real URL), which then renders as a broken link/image on the site.
+    """
+    value = (value or "").strip()
+    if value.lower() in _PLACEHOLDER_TEXT:
+        return None
+    return value or None
+
+
 # --------------------------------------------------------------------
 # Photo uploads — Vercel's filesystem is read-only/ephemeral, so uploaded
 # photos can't be saved to disk there. Instead the raw bytes go straight
@@ -401,23 +418,23 @@ def kirtankar_new():
             kirtankar = KirtankarProfile(
                 full_name=full_name,
                 slug=slug,
-                honorific=request.form.get("honorific", "").strip() or None,
+                honorific=clean_text(request.form.get("honorific")),
                 photo_data=photo_data,
                 photo_mimetype=photo_mimetype,
-                short_intro=request.form.get("short_intro", "").strip() or None,
-                full_bio=request.form.get("full_bio", "").strip() or None,
-                village=request.form.get("village", "").strip() or None,
-                district=request.form.get("district", "").strip() or None,
-                state=request.form.get("state", "").strip() or None,
-                popular_kirtans=request.form.get("popular_kirtans", "").strip() or None,
-                special_topics=request.form.get("special_topics", "").strip() or None,
-                youtube_url=request.form.get("youtube_url", "").strip() or None,
-                facebook_url=request.form.get("facebook_url", "").strip() or None,
-                instagram_url=request.form.get("instagram_url", "").strip() or None,
-                website_url=request.form.get("website_url", "").strip() or None,
-                contact_info=request.form.get("contact_info", "").strip() or None,
+                short_intro=clean_text(request.form.get("short_intro")),
+                full_bio=clean_text(request.form.get("full_bio")),
+                village=clean_text(request.form.get("village")),
+                district=clean_text(request.form.get("district")),
+                state=clean_text(request.form.get("state")),
+                popular_kirtans=clean_text(request.form.get("popular_kirtans")),
+                special_topics=clean_text(request.form.get("special_topics")),
+                youtube_url=clean_text(request.form.get("youtube_url")),
+                facebook_url=clean_text(request.form.get("facebook_url")),
+                instagram_url=clean_text(request.form.get("instagram_url")),
+                website_url=clean_text(request.form.get("website_url")),
+                contact_info=clean_text(request.form.get("contact_info")),
                 is_contact_public=bool(request.form.get("is_contact_public")),
-                meta_description=request.form.get("meta_description", "").strip() or None,
+                meta_description=clean_text(request.form.get("meta_description")),
                 is_published=bool(request.form.get("is_published")),
             )
             db.session.add(kirtankar)
@@ -452,20 +469,20 @@ def kirtankar_edit(kirtankar_id):
                 kirtankar.photo_data = None
                 kirtankar.photo_mimetype = None
             # else: no file chosen and box not ticked -> keep existing photo as-is.
-            kirtankar.short_intro = request.form.get("short_intro", "").strip() or None
-            kirtankar.full_bio = request.form.get("full_bio", "").strip() or None
-            kirtankar.village = request.form.get("village", "").strip() or None
-            kirtankar.district = request.form.get("district", "").strip() or None
-            kirtankar.state = request.form.get("state", "").strip() or None
-            kirtankar.popular_kirtans = request.form.get("popular_kirtans", "").strip() or None
-            kirtankar.special_topics = request.form.get("special_topics", "").strip() or None
-            kirtankar.youtube_url = request.form.get("youtube_url", "").strip() or None
-            kirtankar.facebook_url = request.form.get("facebook_url", "").strip() or None
-            kirtankar.instagram_url = request.form.get("instagram_url", "").strip() or None
-            kirtankar.website_url = request.form.get("website_url", "").strip() or None
-            kirtankar.contact_info = request.form.get("contact_info", "").strip() or None
+            kirtankar.short_intro = clean_text(request.form.get("short_intro"))
+            kirtankar.full_bio = clean_text(request.form.get("full_bio"))
+            kirtankar.village = clean_text(request.form.get("village"))
+            kirtankar.district = clean_text(request.form.get("district"))
+            kirtankar.state = clean_text(request.form.get("state"))
+            kirtankar.popular_kirtans = clean_text(request.form.get("popular_kirtans"))
+            kirtankar.special_topics = clean_text(request.form.get("special_topics"))
+            kirtankar.youtube_url = clean_text(request.form.get("youtube_url"))
+            kirtankar.facebook_url = clean_text(request.form.get("facebook_url"))
+            kirtankar.instagram_url = clean_text(request.form.get("instagram_url"))
+            kirtankar.website_url = clean_text(request.form.get("website_url"))
+            kirtankar.contact_info = clean_text(request.form.get("contact_info"))
             kirtankar.is_contact_public = bool(request.form.get("is_contact_public"))
-            kirtankar.meta_description = request.form.get("meta_description", "").strip() or None
+            kirtankar.meta_description = clean_text(request.form.get("meta_description"))
             kirtankar.is_published = bool(request.form.get("is_published"))
             db.session.commit()
             flash("Kirtankar profile updated.", "success")
