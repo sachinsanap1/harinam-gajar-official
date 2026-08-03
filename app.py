@@ -132,6 +132,16 @@ def register_context_processors(app):
             "social_facebook": app.config["SOCIAL_FACEBOOK"],
         }
 
+    @app.template_global()
+    def photo_version(dt):
+        """
+        Turns an 'updated at' datetime into an int for use as a ?v=... query
+        param on photo/audio URLs, so the browser fetches the new file
+        instead of serving a stale one from its long-lived cache after a
+        re-upload. Falls back to 0 when there's no timestamp yet.
+        """
+        return int(dt.timestamp()) if dt else 0
+
 
 def register_scheduler(app):
     """Optional background YouTube sync every N minutes (APScheduler)."""
@@ -169,6 +179,45 @@ def register_cli(app):
                 db.session.add(Category(name=name, slug=slug))
         db.session.commit()
         click.echo("Database initialized.")
+
+    @app.cli.command("migrate-db")
+    def migrate_db():
+        """
+        One-time schema upgrade for this update: adds the new photo/audio
+        upload columns to existing tables (db.create_all() only creates
+        *missing* tables, it never alters ones that already exist), creates
+        the new kirtankar_videos table, and drops the old sant_vachans
+        table. Safe to run more than once. Run once after deploying:
+        `flask migrate-db`
+        """
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        def add_column_if_missing(table, column, ddl_type):
+            if table not in existing_tables:
+                return
+            cols = {c["name"] for c in inspector.get_columns(table)}
+            if column not in cols:
+                db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}"))
+                click.echo(f"  + {table}.{column}")
+
+        add_column_if_missing("sant_profiles", "photo_data", "BLOB")
+        add_column_if_missing("sant_profiles", "photo_mimetype", "VARCHAR(100)")
+        add_column_if_missing("sant_profiles", "photo_updated_at", "DATETIME")
+        add_column_if_missing("kirtankar_profiles", "photo_updated_at", "DATETIME")
+        add_column_if_missing("devotional_texts", "audio_data", "BLOB")
+        add_column_if_missing("devotional_texts", "audio_mimetype", "VARCHAR(100)")
+        db.session.commit()
+
+        db.create_all()  # picks up the new kirtankar_videos table
+
+        if "sant_vachans" in existing_tables:
+            db.session.execute(text("DROP TABLE sant_vachans"))
+            db.session.commit()
+            click.echo("  - dropped sant_vachans")
+
+        click.echo("Database migrated.")
 
     @app.cli.command("seed-example-abhang")
     def seed_example_abhang():
