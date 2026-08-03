@@ -12,8 +12,8 @@
     <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="copyText()">📋 Copy</button>
     <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="window.print()">🖨 Print</button>
     <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="shareText()">🔗 Share</button>
-    {% if text.audio_data %}<audio controls src="{{ url_for('reading.audio', text_id=text.id) }}" style="height:32px;"></audio>
-    {% elif text.audio_url %}<audio controls src="{{ text.audio_url }}" style="height:32px;"></audio>{% endif %}
+    {% if text.audio_url %}<audio controls src="{{ text.audio_url }}" style="height:32px;"></audio>
+    {% elif text.audio_data %}<audio controls src="{{ url_for('reading.audio', text_id=text.id) }}" style="height:32px;"></audio>{% endif %}
   </div>
 
   <div id="reading-text" style="white-space:pre-line; line-height:2.1; font-size:1.15rem;">{{ text.content_marathi }}</div>
