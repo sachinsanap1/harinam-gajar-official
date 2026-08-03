@@ -16,7 +16,7 @@
       <img src="{{ k.photo_url }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
       {% endif %}
     </td>
-    <td>{{ k.honorific }} {{ k.full_name }}</td>
+    <td>{% if k.honorific %}{{ k.honorific }} {% endif %}{{ k.full_name }}</td>
     <td>{{ k.district or '—' }}</td>
     <td>{{ '{:,}'.format(k.view_count or 0) }}</td>
     <td><span class="pill pill-{{ 'published' if k.is_published else 'draft' }}">{{ 'published' if k.is_published else 'draft' }}</span></td>
