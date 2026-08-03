@@ -20,7 +20,7 @@ dependencies = [
     "click==8.1.7",
     "email-validator==2.2.0",
     "cloudinary==1.41.0"
-]
+   ]
 
 [tool.vercel.scripts]
 build = "python build.py"
