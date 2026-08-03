@@ -58,3 +58,60 @@ def sync_youtube():
         })
     except YouTubeSyncError as e:
         return jsonify({"ok": False, "error": str(e)}), 502
+
+
+@cron_bp.route("/migrate-db")
+def migrate_db_route():
+    """
+    Same one-time schema upgrade as `flask migrate-db`, but reachable by
+    just visiting the URL in a browser — for when there's no easy way to
+    run a terminal command against the production database (e.g. a
+    managed DB that only accepts connections from inside Vercel).
+
+    Visit once (with your real CRON_SECRET):
+        https://<your-site>/cron/migrate-db?secret=<CRON_SECRET>
+
+    Safe to run more than once — it only adds columns/tables that are
+    missing and skips ones that already exist. Consider removing this
+    route (or at least rotating CRON_SECRET) once you've confirmed it
+    worked, since it's schema-changing even though it's secret-protected.
+    """
+    if not _authorized():
+        return jsonify({"error": "Unauthorized. Set CRON_SECRET and pass it as ?secret=."}), 401
+
+    from models import db
+    from sqlalchemy import inspect, text
+
+    log = []
+    inspector = inspect(db.engine)
+    existing_tables = inspector.get_table_names()
+
+    def add_column_if_missing(table, column, ddl_type):
+        if table not in existing_tables:
+            return
+        cols = {c["name"] for c in inspector.get_columns(table)}
+        if column not in cols:
+            db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}"))
+            log.append(f"added {table}.{column}")
+
+    try:
+        add_column_if_missing("sant_profiles", "photo_data", "BLOB")
+        add_column_if_missing("sant_profiles", "photo_mimetype", "VARCHAR(100)")
+        add_column_if_missing("sant_profiles", "photo_updated_at", "DATETIME")
+        add_column_if_missing("kirtankar_profiles", "photo_updated_at", "DATETIME")
+        add_column_if_missing("devotional_texts", "audio_data", "BLOB")
+        add_column_if_missing("devotional_texts", "audio_mimetype", "VARCHAR(100)")
+        add_column_if_missing("devotional_texts", "audio_public_id", "VARCHAR(300)")
+        db.session.commit()
+
+        db.create_all()  # picks up the new kirtankar_videos table
+
+        if "sant_vachans" in existing_tables:
+            db.session.execute(text("DROP TABLE sant_vachans"))
+            db.session.commit()
+            log.append("dropped sant_vachans")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(e), "done_so_far": log}), 500
+
+    return jsonify({"ok": True, "changes": log or ["nothing to do — already up to date"]})
