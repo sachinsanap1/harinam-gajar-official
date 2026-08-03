@@ -54,52 +54,58 @@
             🔗 Share
         </button>
 
-    </div>
-    <p style="color:red">
-    audio_data = {{ text.audio_data is not none }}
-    <br>
-    audio_url = {{ text.audio_url }}
-    </p>
-    <!-- Audio -->
-
-    {% if text.audio_data %}
-
-    <div style="margin-bottom:25px;">
-
+        </div>
+    
+        <!-- DEBUG -->
+        
+        <div style="background:#ffeeba;padding:10px;margin-bottom:20px;">
+            <b>DEBUG</b><br>
+        
+            text.id = {{ text.id }}<br>
+        
+            audio_data exists =
+            {{ text.audio_data is not none }}<br>
+        
+            audio_url =
+            {{ text.audio_url }}<br>
+        
+            audio_mimetype =
+            {{ text.audio_mimetype }}
+        </div>
+        
+        {% if text.audio_data is not none %}
+        
+        <p style="color:green">
+        Rendering DATABASE audio
+        </p>
+        
         <audio
-            id="audioPlayer"
             controls
             preload="metadata"
+            src="{{ url_for('reading.audio', text_id=text.id) }}"
             style="width:100%;">
-
-            <source
-                src="{{ url_for('reading.audio', text_id=text.id) }}"
-                type="audio/mpeg">
-
-            Your browser does not support HTML5 audio.
-
         </audio>
-
-    </div>
-
-    {% elif text.audio_url %}
-
-    <div style="margin-bottom:25px;">
-
+        
+        {% elif text.audio_url %}
+        
+        <p style="color:blue">
+        Rendering URL audio
+        </p>
+        
         <audio
             controls
             preload="metadata"
-            style="width:100%;"
-            src="{{ text.audio_url }}">
-
-            Your browser does not support HTML5 audio.
-
+            src="{{ text.audio_url }}"
+            style="width:100%;">
         </audio>
-
-    </div>
-
-    {% endif %}
-
+        
+        {% else %}
+        
+        <p style="color:red">
+        NO AUDIO FOUND
+        </p>
+        
+        {% endif %}
     <!-- Reading Text -->
 
     <div id="reading-text"
