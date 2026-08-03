@@ -4,5 +4,21 @@ version = "1.0.0"
 description = "Harinam Gajar Official Flask website"
 requires-python = ">=3.11"
 
+dependencies = [
+    "Flask==3.0.3",
+    "Flask-SQLAlchemy==3.1.1",
+    "Flask-Login==0.6.3",
+    "Flask-WTF==1.2.1",
+    "WTForms==3.1.2",
+    "python-dotenv==1.0.1",
+    "requests==2.32.3",
+    "Werkzeug==3.0.3",
+    "PyMySQL==1.1.1",
+    "psycopg2-binary==2.9.9",
+    "APScheduler==3.10.4",
+    "gunicorn==22.0.0",
+    "click==8.1.7"
+]
+
 [tool.vercel.scripts]
 build = "python build.py"
