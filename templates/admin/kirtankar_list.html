@@ -6,9 +6,16 @@
   <a class="btn btn-primary" href="{{ url_for('admin.kirtankar_new') }}">+ New Profile</a>
 </div>
 <table class="admin-table" style="margin-top:16px;">
-  <tr><th>Name</th><th>District</th><th>Views</th><th>Status</th><th></th></tr>
+  <tr><th>Photo</th><th>Name</th><th>District</th><th>Views</th><th>Status</th><th></th></tr>
   {% for k in kirtankars %}
   <tr>
+    <td>
+      {% if k.photo_data %}
+      <img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id) }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
+      {% elif k.photo_url %}
+      <img src="{{ k.photo_url }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
+      {% endif %}
+    </td>
     <td>{{ k.honorific }} {{ k.full_name }}</td>
     <td>{{ k.district or '—' }}</td>
     <td>{{ '{:,}'.format(k.view_count or 0) }}</td>
@@ -22,7 +29,7 @@
     </td>
   </tr>
   {% else %}
-  <tr><td colspan="5" style="opacity:0.6;">No profiles yet.</td></tr>
+  <tr><td colspan="6" style="opacity:0.6;">No profiles yet.</td></tr>
   {% endfor %}
 </table>
 {% endblock %}
