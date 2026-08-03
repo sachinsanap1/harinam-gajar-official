@@ -133,7 +133,11 @@
   <div class="card-grid">
     {% for k in featured_kirtankars %}
     <a class="post-card" href="{{ url_for('kirtankars.detail', slug=k.slug) }}">
-      <div class="thumb-wrap">{% if k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">{% endif %}</div>
+      <div class="thumb-wrap">
+        {% if k.photo_data %}<img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id) }}" alt="{{ k.full_name }}">
+        {% elif k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">
+        {% endif %}
+      </div>
       <div class="card-body"><h3>{{ k.honorific }} {{ k.full_name }}</h3></div>
     </a>
     {% endfor %}
