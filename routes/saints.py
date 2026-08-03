@@ -1,7 +1,26 @@
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request, abort, Response
 from models import SantProfile
 
 saints_bp = Blueprint("saints", __name__, url_prefix="/sant-charitra")
+
+
+@saints_bp.route("/<int:saint_id>/photo")
+def photo(saint_id):
+    """
+    Streams a saint's photo straight out of the database — mirrors
+    kirtankars.photo. See that route's docstring for why (no writable
+    disk on Vercel). Cache-Control is long + immutable because the URL
+    is versioned with ?v=<timestamp> by the templates (see photo_version
+    in app.py), so a new upload always gets a fresh URL.
+    """
+    saint = SantProfile.query.get_or_404(saint_id)
+    if not saint.photo_data:
+        abort(404)
+    return Response(
+        saint.photo_data,
+        mimetype=saint.photo_mimetype or "image/jpeg",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @saints_bp.route("/")
