@@ -6,269 +6,205 @@
 
 {% block content %}
 
-<article
-    class="container"
-    style="max-width:720px;"
-    id="reading-article"
->
+<article class="container" style="max-width:760px;" id="reading-article">
 
+    <!-- Category -->
     <span class="pill pill-draft">
         {{ category_labels.get(text.category, text.category) }}
     </span>
 
-    <h1
-        class="display"
-        style="font-size:2rem; margin-top:10px;"
-    >
+    <!-- Title -->
+    <h1 class="display" style="font-size:2rem;margin-top:12px;">
         {{ text.title }}
     </h1>
 
+    <!-- Source -->
     {% if text.source %}
-    <p style="opacity:0.55; font-size:0.85rem;">
-        स्रोत: {{ text.source }}
+    <p style="opacity:.65;font-size:.9rem;margin-bottom:20px;">
+        स्रोत : {{ text.source }}
     </p>
     {% endif %}
 
+    <!-- Controls -->
+    <div style="
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+        align-items:center;
+        margin-bottom:20px;
+    ">
 
-    <!-- Reading controls -->
-
-    <div
-        style="
-            display:flex;
-            gap:10px;
-            margin:18px 0;
-            flex-wrap:wrap;
-            align-items:center;
-        "
-    >
-
-        <button
-            class="btn btn-outline"
-            style="
-                color:var(--ink);
-                border-color:var(--ink-soft);
-                padding:6px 14px;
-                font-size:0.85rem;
-            "
-            onclick="changeFontSize(-2)"
-        >
+        <button class="btn btn-outline" onclick="changeFont(-2)">
             A-
         </button>
 
-
-        <button
-            class="btn btn-outline"
-            style="
-                color:var(--ink);
-                border-color:var(--ink-soft);
-                padding:6px 14px;
-                font-size:0.85rem;
-            "
-            onclick="changeFontSize(2)"
-        >
+        <button class="btn btn-outline" onclick="changeFont(2)">
             A+
         </button>
 
-
-        <button
-            class="btn btn-outline"
-            style="
-                color:var(--ink);
-                border-color:var(--ink-soft);
-                padding:6px 14px;
-                font-size:0.85rem;
-            "
-            onclick="copyText()"
-        >
+        <button class="btn btn-outline" onclick="copyText()">
             📋 Copy
         </button>
 
-
-        <button
-            class="btn btn-outline"
-            style="
-                color:var(--ink);
-                border-color:var(--ink-soft);
-                padding:6px 14px;
-                font-size:0.85rem;
-            "
-            onclick="window.print()"
-        >
+        <button class="btn btn-outline" onclick="window.print()">
             🖨 Print
         </button>
 
-
-        <button
-            class="btn btn-outline"
-            style="
-                color:var(--ink);
-                border-color:var(--ink-soft);
-                padding:6px 14px;
-                font-size:0.85rem;
-            "
-            onclick="shareText()"
-        >
+        <button class="btn btn-outline" onclick="sharePage()">
             🔗 Share
         </button>
 
-        
-        <!-- Audio player -->
-        
-        {% if text.audio_data %}
-        
+    </div>
+
+    <!-- Audio -->
+
+    {% if text.audio_data %}
+
+    <div style="margin-bottom:25px;">
+
         <audio
+            id="audioPlayer"
             controls
             preload="metadata"
-            style="
-                width:100%;
-                max-width:500px;
-                height:40px;
-            "
-        >
+            style="width:100%;">
+
             <source
-                src="/reading/{{ text.id }}/audio"
-                type="{{ text.audio_mimetype or 'audio/mpeg' }}"
-            >
-        
-            Your browser does not support audio.
+                src="{{ url_for('reading.audio', text_id=text.id) }}"
+                type="audio/mpeg">
+
+            Your browser does not support HTML5 audio.
+
         </audio>
-        
-        {% elif text.audio_url %}
-        
+
+    </div>
+
+    {% elif text.audio_url %}
+
+    <div style="margin-bottom:25px;">
+
         <audio
             controls
             preload="metadata"
-            src="{{ text.audio_url }}"
-            style="
-                width:100%;
-                max-width:500px;
-                height:40px;
-            "
-        >
-            Your browser does not support audio.
+            style="width:100%;"
+            src="{{ text.audio_url }}">
+
+            Your browser does not support HTML5 audio.
+
         </audio>
-        
-        {% endif %}
+
     </div>
 
+    {% endif %}
 
-    <!-- Marathi reading text -->
+    <!-- Reading Text -->
 
-    <div
-        id="reading-text"
-        style="
+    <div id="reading-text"
+         style="
             white-space:pre-line;
-            line-height:2.1;
-            font-size:1.15rem;
-        "
-    >
+            font-size:20px;
+            line-height:2;
+         ">
+
         {{ text.content_marathi }}
+
     </div>
 
+    <!-- Previous / Next -->
 
-    <!-- Previous and next reading -->
-
-    <div
-        style="
-            display:flex;
-            justify-content:space-between;
-            margin-top:40px;
-            padding-top:20px;
-            border-top:1px solid var(--ivory-deep);
-        "
-    >
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        margin-top:50px;
+        border-top:1px solid #ddd;
+        padding-top:20px;
+    ">
 
         {% if prev_text %}
-
-        <a
-            href="{{ url_for('reading.detail', slug=prev_text.slug) }}"
-        >
-            ← {{ prev_text.title }}
-        </a>
-
+            <a href="{{ url_for('reading.detail', slug=prev_text.slug) }}">
+                ← {{ prev_text.title }}
+            </a>
         {% else %}
-
-        <span></span>
-
+            <span></span>
         {% endif %}
 
-
         {% if next_text %}
-
-        <a
-            href="{{ url_for('reading.detail', slug=next_text.slug) }}"
-        >
-            {{ next_text.title }} →
-        </a>
-
+            <a href="{{ url_for('reading.detail', slug=next_text.slug) }}">
+                {{ next_text.title }} →
+            </a>
         {% endif %}
 
     </div>
 
 </article>
 
-
 <script>
 
-function changeFontSize(delta) {
+let currentFont = 20;
 
-    const element =
-        document.getElementById("reading-text");
+function changeFont(delta){
 
-    const currentSize =
-        parseFloat(
-            window.getComputedStyle(element).fontSize
-        );
+    currentFont += delta;
 
-    element.style.fontSize =
-        (currentSize + delta) + "px";
+    if(currentFont < 14)
+        currentFont = 14;
+
+    if(currentFont > 40)
+        currentFont = 40;
+
+    document.getElementById("reading-text").style.fontSize =
+        currentFont + "px";
+}
+
+function copyText(){
+
+    navigator.clipboard.writeText(
+        document.getElementById("reading-text").innerText
+    ).then(function(){
+
+        alert("मजकूर कॉपी झाला.");
+
+    });
 
 }
 
+function sharePage(){
 
-function copyText() {
-
-    const text =
-        document
-        .getElementById("reading-text")
-        .innerText;
-
-    navigator.clipboard
-        .writeText(text)
-        .then(function () {
-
-            alert("मजकूर कॉपी झाला.");
-
-        });
-
-}
-
-
-function shareText() {
-
-    if (navigator.share) {
+    if(navigator.share){
 
         navigator.share({
-
             title: document.title,
-
             url: window.location.href
-
         });
 
-    } else {
+    }else{
 
-        navigator.clipboard
-            .writeText(
-                window.location.href
-            )
-            .then(function () {
+        navigator.clipboard.writeText(window.location.href);
 
-                alert("लिंक कॉपी झाली.");
-
-            });
+        alert("लिंक कॉपी झाली.");
 
     }
+
+}
+
+// Debug audio
+
+const audio = document.getElementById("audioPlayer");
+
+if(audio){
+
+    audio.addEventListener("loadedmetadata", function(){
+
+        console.log("Duration:", audio.duration);
+
+    });
+
+    audio.addEventListener("error", function(){
+
+        console.log(audio.error);
+
+        alert("Audio failed to load.");
+
+    });
 
 }
 
