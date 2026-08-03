@@ -111,13 +111,34 @@
             🔗 Share
         </button>
 
-
+        
         <!-- Audio player -->
-
+        
+        {% if text.audio_data %}
+        
         <audio
             controls
             preload="metadata"
-            src="{{ url_for('reading.audio', text_id=text.id) }}"
+            style="
+                width:100%;
+                max-width:500px;
+                height:40px;
+            "
+        >
+            <source
+                src="/reading/{{ text.id }}/audio"
+                type="{{ text.audio_mimetype or 'audio/mpeg' }}"
+            >
+        
+            Your browser does not support audio.
+        </audio>
+        
+        {% elif text.audio_url %}
+        
+        <audio
+            controls
+            preload="metadata"
+            src="{{ text.audio_url }}"
             style="
                 width:100%;
                 max-width:500px;
@@ -126,6 +147,8 @@
         >
             Your browser does not support audio.
         </audio>
+        
+        {% endif %}
     </div>
 
 
