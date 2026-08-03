@@ -1,7 +1,20 @@
+import re
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+
+_YOUTUBE_ID_RE = re.compile(
+    r"(?:youtube\.com/(?:watch\?v=|shorts/|embed/)|youtu\.be/)([A-Za-z0-9_-]{6,15})"
+)
+
+
+def extract_youtube_id(url):
+    """Pulls the 11-char video ID out of any common YouTube URL shape."""
+    if not url:
+        return None
+    m = _YOUTUBE_ID_RE.search(url)
+    return m.group(1) if m else None
 
 db = SQLAlchemy()
 
@@ -197,7 +210,10 @@ class SantProfile(db.Model):
     name = db.Column(db.String(150), nullable=False)
     slug = db.Column(db.String(180), unique=True, nullable=False, index=True)
     alt_names = db.Column(db.String(300))            # comma separated alternative names
-    photo_url = db.Column(db.String(400))
+    photo_url = db.Column(db.String(400))              # legacy — old entries only, no longer editable via admin
+    photo_data = db.Column(db.LargeBinary, nullable=True)   # uploaded photo bytes (Vercel has no writable disk)
+    photo_mimetype = db.Column(db.String(100), nullable=True)
+    photo_updated_at = db.Column(db.DateTime, nullable=True)  # bumped on new upload, used to cache-bust the photo URL
     tradition = db.Column(db.String(100))              # e.g. Warkari, Nath, Mahanubhav — admin free text
     birth_info = db.Column(db.String(300))                # free text — "believed to be c. 1275 (dates debated)"
     samadhi_info = db.Column(db.String(300))
@@ -227,6 +243,7 @@ class KirtankarProfile(db.Model):
     photo_url = db.Column(db.String(400))
     photo_data = db.Column(db.LargeBinary, nullable=True)
     photo_mimetype = db.Column(db.String(100), nullable=True)
+    photo_updated_at = db.Column(db.DateTime, nullable=True)  # bumped on new upload, used to cache-bust the photo URL
     short_intro = db.Column(db.String(400))
     full_bio = db.Column(db.Text)
     village = db.Column(db.String(120))
@@ -246,6 +263,35 @@ class KirtankarProfile(db.Model):
 
     meta_description = db.Column(db.String(160))
 
+    videos = db.relationship(
+        "KirtankarVideo", backref="kirtankar", lazy=True,
+        order_by="KirtankarVideo.order_index",
+        cascade="all, delete-orphan",
+    )
+
+
+# --------------------------------------------------------------------------
+# Popular kirtans — one YouTube link per named kirtan, shown under
+# "लोकप्रिय कीर्तने" on a kirtankar's profile page.
+# --------------------------------------------------------------------------
+class KirtankarVideo(db.Model):
+    __tablename__ = "kirtankar_videos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    kirtankar_id = db.Column(db.Integer, db.ForeignKey("kirtankar_profiles.id"), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    youtube_url = db.Column(db.String(400), nullable=False)
+    order_index = db.Column(db.Integer, default=0)
+
+    @property
+    def youtube_video_id(self):
+        return extract_youtube_id(self.youtube_url)
+
+    @property
+    def thumbnail_url(self):
+        vid = self.youtube_video_id
+        return f"https://img.youtube.com/vi/{vid}/hqdefault.jpg" if vid else None
+
 
 # --------------------------------------------------------------------------
 # Devotional Reading Library — Haripath, Aarti, Stotra, etc.
@@ -259,22 +305,9 @@ class DevotionalText(db.Model):
     category = db.Column(db.String(60), nullable=False)   # haripath, aarti, stotra, namasmaran, prayer, other
     content_marathi = db.Column(db.Text, nullable=False)
     source = db.Column(db.String(200))
-    audio_url = db.Column(db.String(400))                  # optional — leave blank if no audio available
+    audio_url = db.Column(db.String(400))                  # legacy — old entries only, no longer editable via admin
+    audio_data = db.Column(db.LargeBinary, nullable=True)   # uploaded audio bytes (Vercel has no writable disk)
+    audio_mimetype = db.Column(db.String(100), nullable=True)
     order_index = db.Column(db.Integer, default=0)
     is_published = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-# --------------------------------------------------------------------------
-# Daily Sant Vachan — "आजचा संतविचार"
-# --------------------------------------------------------------------------
-class SantVachan(db.Model):
-    __tablename__ = "sant_vachans"
-
-    id = db.Column(db.Integer, primary_key=True)
-    quote_text = db.Column(db.Text, nullable=False)
-    saint_name = db.Column(db.String(120))
-    meaning = db.Column(db.Text)
-    image_url = db.Column(db.String(400))
-    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
