@@ -20,100 +20,227 @@ CATEGORY_LABELS = {
 
 
 # =========================================================
-# AUDIO
+# AUDIO MIME TYPE DETECTION
+# =========================================================
+
+def detect_audio_mimetype(data, saved_mimetype=None):
+
+    # Convert PostgreSQL memoryview/BYTEA to bytes
+    data = bytes(data)
+
+    # MP3 with ID3 metadata
+    if data.startswith(b"ID3"):
+        return "audio/mpeg"
+
+    # MP3 without ID3 metadata
+    if len(data) >= 2:
+        if data[0] == 0xFF and (data[1] & 0xE0) == 0xE0:
+            return "audio/mpeg"
+
+    # WAV
+    if (
+        len(data) >= 12
+        and data[0:4] == b"RIFF"
+        and data[8:12] == b"WAVE"
+    ):
+        return "audio/wav"
+
+    # OGG
+    if data.startswith(b"OggS"):
+        return "audio/ogg"
+
+    # WEBM / Matroska
+    if data.startswith(b"\x1a\x45\xdf\xa3"):
+        return "audio/webm"
+
+    # M4A / AAC / MP4 files normally contain "ftyp"
+    if (
+        len(data) >= 12
+        and data[4:8] == b"ftyp"
+    ):
+        return "audio/mp4"
+
+    # Use the MIME type saved in the database
+    if saved_mimetype:
+
+        saved_mimetype = (
+            saved_mimetype
+            .strip()
+            .lower()
+        )
+
+        mime_map = {
+            "audio/mp3": "audio/mpeg",
+            "audio/mpeg": "audio/mpeg",
+            "audio/x-mpeg": "audio/mpeg",
+
+            "audio/m4a": "audio/mp4",
+            "audio/x-m4a": "audio/mp4",
+            "audio/mp4": "audio/mp4",
+
+            "audio/aac": "audio/aac",
+
+            "audio/ogg": "audio/ogg",
+            "application/ogg": "audio/ogg",
+
+            "audio/wav": "audio/wav",
+            "audio/x-wav": "audio/wav",
+
+            "audio/webm": "audio/webm",
+        }
+
+        return mime_map.get(
+            saved_mimetype,
+            saved_mimetype
+        )
+
+    # Final fallback
+    return "application/octet-stream"
+
+
+# =========================================================
+# AUDIO ROUTE
 # =========================================================
 
 @reading_bp.route("/<int:text_id>/audio")
 def audio(text_id):
 
-    text = DevotionalText.query.get_or_404(text_id)
+    text = DevotionalText.query.get_or_404(
+        text_id
+    )
 
-    # No audio uploaded
     if not text.audio_data:
         abort(404)
 
-    # Convert PostgreSQL BYTEA / memoryview to normal bytes
-    data = bytes(text.audio_data)
-
-    # Use saved MIME type, otherwise use MP3
-    mimetype = text.audio_mimetype or "audio/mpeg"
+    # PostgreSQL BYTEA can return memoryview
+    data = bytes(
+        text.audio_data
+    )
 
     total_length = len(data)
 
-    # Safety check
     if total_length == 0:
         abort(404)
 
-    # Browser may request only part of the audio
-    range_header = request.headers.get("Range")
+    # Detect the real audio type
+    mimetype = detect_audio_mimetype(
+        data,
+        text.audio_mimetype
+    )
 
-    # -----------------------------------------------------
-    # Full audio request
-    # -----------------------------------------------------
+    range_header = request.headers.get(
+        "Range"
+    )
+
+    # =====================================================
+    # FULL AUDIO RESPONSE
+    # =====================================================
 
     if not range_header:
 
         response = Response(
             data,
             status=200,
-            mimetype=mimetype,
+            content_type=mimetype
         )
 
-        response.headers["Content-Length"] = str(
+        response.headers[
+            "Content-Length"
+        ] = str(
             total_length
         )
 
-        response.headers["Accept-Ranges"] = "bytes"
+        response.headers[
+            "Accept-Ranges"
+        ] = "bytes"
 
-        response.headers["Cache-Control"] = (
-            "public, max-age=3600"
-        )
+        response.headers[
+            "Cache-Control"
+        ] = "no-cache"
 
         return response
 
-    # -----------------------------------------------------
-    # HTTP Range request
-    # Example:
-    # Range: bytes=0-1023
-    # -----------------------------------------------------
+    # =====================================================
+    # RANGE AUDIO RESPONSE
+    # =====================================================
 
     try:
 
-        units, _, range_spec = (
+        unit, _, range_value = (
             range_header.partition("=")
         )
 
-        # Only bytes ranges are supported
-        if units.strip().lower() != "bytes":
+        if (
+            unit.strip()
+            .lower()
+            != "bytes"
+        ):
             abort(416)
 
-        start_str, _, end_str = (
-            range_spec.partition("-")
+        # Only use the first range
+        range_value = (
+            range_value
+            .split(",")[0]
+            .strip()
         )
 
+        start_text, _, end_text = (
+            range_value.partition("-")
+        )
+
+        # -------------------------------------------------
         # Example:
-        # bytes=0-1000
-        if start_str:
+        # Range: bytes=1000-2000
+        # -------------------------------------------------
+
+        if start_text:
 
             start = int(
-                start_str
+                start_text
             )
+
+            if end_text:
+
+                end = int(
+                    end_text
+                )
+
+            else:
+
+                end = (
+                    total_length - 1
+                )
+
+        # -------------------------------------------------
+        # Example:
+        # Range: bytes=-500
+        # Last 500 bytes
+        # -------------------------------------------------
 
         else:
 
-            start = 0
-
-        if end_str:
-
-            end = int(
-                end_str
+            suffix_length = int(
+                end_text
             )
 
-        else:
+            if suffix_length <= 0:
+                abort(416)
 
-            end = total_length - 1
+            suffix_length = min(
+                suffix_length,
+                total_length
+            )
 
-        # Do not allow end beyond the file
+            start = (
+                total_length
+                - suffix_length
+            )
+
+            end = (
+                total_length - 1
+            )
+
+        # Keep end inside the audio
         end = min(
             end,
             total_length - 1
@@ -130,12 +257,12 @@ def audio(text_id):
     if (
         start < 0
         or start >= total_length
-        or start > end
+        or end < start
     ):
 
         abort(416)
 
-    # Requested audio part
+    # Requested part
     chunk = data[
         start:end + 1
     ]
@@ -143,18 +270,16 @@ def audio(text_id):
     response = Response(
         chunk,
         status=206,
-        mimetype=mimetype,
+        content_type=mimetype
     )
 
     response.headers[
         "Content-Range"
     ] = (
-        f"bytes {start}-{end}/{total_length}"
+        f"bytes "
+        f"{start}-{end}/"
+        f"{total_length}"
     )
-
-    response.headers[
-        "Accept-Ranges"
-    ] = "bytes"
 
     response.headers[
         "Content-Length"
@@ -163,10 +288,12 @@ def audio(text_id):
     )
 
     response.headers[
+        "Accept-Ranges"
+    ] = "bytes"
+
+    response.headers[
         "Cache-Control"
-    ] = (
-        "public, max-age=3600"
-    )
+    ] = "no-cache"
 
     return response
 
@@ -203,7 +330,6 @@ def library():
         )
     )
 
-    # Filter by category
     if category:
 
         query = (
@@ -213,7 +339,6 @@ def library():
             )
         )
 
-    # Search by title
     if q:
 
         query = (
@@ -247,7 +372,7 @@ def library():
 
 
 # =========================================================
-# READING DETAILS
+# READING DETAIL
 # =========================================================
 
 @reading_bp.route("/<slug>")
@@ -264,12 +389,10 @@ def detail(slug):
         .first()
     )
 
-    # Reading not found
     if not text:
 
         abort(404)
 
-    # All readings in the same category
     siblings = (
         DevotionalText.query
         .filter_by(
@@ -294,14 +417,12 @@ def detail(slug):
         else -1
     )
 
-    # Previous reading
     prev_text = (
         siblings[idx - 1]
         if idx > 0
         else None
     )
 
-    # Next reading
     next_text = (
         siblings[idx + 1]
         if (
