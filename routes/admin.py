@@ -24,6 +24,35 @@ def slugify(text):
     return re.sub(r"[\s_-]+", "-", text).strip("-")
 
 
+# --------------------------------------------------------------------
+# Photo uploads — Vercel's filesystem is read-only/ephemeral, so uploaded
+# photos can't be saved to disk there. Instead the raw bytes go straight
+# into Postgres (Neon) via KirtankarProfile.photo_data / photo_mimetype,
+# and get streamed back out by the kirtankars.photo route.
+# --------------------------------------------------------------------
+ALLOWED_PHOTO_MIMETYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_PHOTO_BYTES = 4 * 1024 * 1024  # 4 MB — keeps individual DB rows small
+
+
+def read_uploaded_photo(file_storage: "FileStorage"):
+    """
+    Validate + read an uploaded photo from request.files.get(...).
+    Returns (bytes, mimetype), or (None, None) if no file was chosen.
+    Raises ValueError with a user-facing message on invalid input.
+    """
+    if not file_storage or not file_storage.filename:
+        return None, None
+    mimetype = (file_storage.mimetype or "").lower()
+    if mimetype not in ALLOWED_PHOTO_MIMETYPES:
+        raise ValueError("Photo must be a JPEG, PNG, WEBP, or GIF image.")
+    data = file_storage.read()
+    if not data:
+        return None, None
+    if len(data) > MAX_PHOTO_BYTES:
+        raise ValueError("Photo is too large — please use an image under 4 MB.")
+    return data, mimetype
+
+
 @admin_bp.before_request
 @login_required
 def require_login():
@@ -360,6 +389,11 @@ def kirtankar_list():
 def kirtankar_new():
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
+        try:
+            photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/kirtankar_form.html", kirtankar=None)
         if not full_name:
             flash("Name is required.", "error")
         else:
@@ -368,7 +402,8 @@ def kirtankar_new():
                 full_name=full_name,
                 slug=slug,
                 honorific=request.form.get("honorific", "").strip() or None,
-                photo_url=request.form.get("photo_url", "").strip() or None,
+                photo_data=photo_data,
+                photo_mimetype=photo_mimetype,
                 short_intro=request.form.get("short_intro", "").strip() or None,
                 full_bio=request.form.get("full_bio", "").strip() or None,
                 village=request.form.get("village", "").strip() or None,
@@ -397,13 +432,26 @@ def kirtankar_edit(kirtankar_id):
     kirtankar = KirtankarProfile.query.get_or_404(kirtankar_id)
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
+        try:
+            photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/kirtankar_form.html", kirtankar=kirtankar)
         if not full_name:
             flash("Name is required.", "error")
         else:
             kirtankar.full_name = full_name
             kirtankar.slug = request.form.get("slug", "").strip() or slugify(full_name)
             kirtankar.honorific = request.form.get("honorific", "").strip() or None
-            kirtankar.photo_url = request.form.get("photo_url", "").strip() or None
+            if photo_data:
+                # A new file was uploaded — replace the stored photo.
+                kirtankar.photo_data = photo_data
+                kirtankar.photo_mimetype = photo_mimetype
+            elif request.form.get("remove_photo"):
+                # "Remove current photo" was ticked and no replacement was given.
+                kirtankar.photo_data = None
+                kirtankar.photo_mimetype = None
+            # else: no file chosen and box not ticked -> keep existing photo as-is.
             kirtankar.short_intro = request.form.get("short_intro", "").strip() or None
             kirtankar.full_bio = request.form.get("full_bio", "").strip() or None
             kirtankar.village = request.form.get("village", "").strip() or None
