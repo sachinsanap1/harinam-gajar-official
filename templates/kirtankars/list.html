@@ -24,7 +24,7 @@
         {% endif %}
       </div>
       <div class="card-body">
-        <h3>{{ k.honorific }} {{ k.full_name }}</h3>
+        <h3>{% if k.honorific %}{{ k.honorific }} {% endif %}{{ k.full_name }}</h3>
         {% if k.short_intro %}<p style="font-size:0.85rem; opacity:0.75;">{{ k.short_intro }}</p>{% endif %}
         {% if k.village or k.district %}<div class="card-meta">{{ k.village }}{% if k.village and k.district %}, {% endif %}{{ k.district }}</div>{% endif %}
       </div>
