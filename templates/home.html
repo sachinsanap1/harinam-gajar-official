@@ -138,7 +138,7 @@
         {% elif k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">
         {% endif %}
       </div>
-      <div class="card-body"><h3>{{ k.honorific }} {{ k.full_name }}</h3></div>
+      <div class="card-body"><h3>{% if k.honorific %}{{ k.honorific }} {% endif %}{{ k.full_name }}</h3></div>
     </a>
     {% endfor %}
   </div>
