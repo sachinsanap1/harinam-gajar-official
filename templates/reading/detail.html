@@ -127,24 +127,32 @@
         >
             <source
                 src="{{ url_for('reading.audio', text_id=text.id) }}"
-                type="audio/mpeg"
+                type="{{ text.audio_mimetype or 'audio/mpeg' }}"
             >
         
             Your browser does not support audio.
         </audio>
         
-        {% elif text.audio_url %}
+        {% elif text.audio_url
+            and text.audio_url != 'None'
+            and text.audio_url != 'null'
+            and text.audio_url != 'NULL'
+        %}
         
         <audio
             controls
             preload="metadata"
-            src="{{ text.audio_url }}"
             style="
                 width:100%;
                 max-width:500px;
                 height:40px;
             "
         >
+            <source
+                src="{{ text.audio_url }}"
+                type="audio/mpeg"
+            >
+        
             Your browser does not support audio.
         </audio>
         
