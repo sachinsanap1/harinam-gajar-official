@@ -15,7 +15,6 @@
     <a href="{{ url_for('admin.videos') }}" class="{{ 'active' if request.endpoint.startswith('admin.videos') if request.endpoint else '' }}">🎬 Videos</a>
     <a href="{{ url_for('admin.blog_list') }}" class="{{ 'active' if 'blog' in request.endpoint }}">📝 Blog</a>
     <a href="{{ url_for('admin.abhang_list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.abhang') }}">🪔 Abhangs</a>
-    <a href="{{ url_for('admin.vachan_list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.vachan') }}">💬 Sant Vachan</a>
     <a href="{{ url_for('admin.saint_list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.saint') }}">👤 Saints</a>
     <a href="{{ url_for('admin.kirtankar_list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.kirtankar') }}">🎤 Kirtankars</a>
     <a href="{{ url_for('admin.reading_list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin.reading') }}">📖 Reading Library</a>
