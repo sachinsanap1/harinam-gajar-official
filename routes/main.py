@@ -3,7 +3,6 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models import db, Video, Post, Category, ContactMessage, SantProfile, KirtankarProfile, DevotionalText, Abhang
 from forms import ContactForm
 from services.abhang_rotation import get_todays_abhang
-from services.vachan_rotation import get_todays_vachan
 
 main_bp = Blueprint("main", __name__)
 
@@ -29,7 +28,6 @@ def home():
         Post.query.filter_by(status="published").order_by(Post.published_at.desc()).limit(3).all()
     )
     todays_abhang = get_todays_abhang()
-    todays_vachan = get_todays_vachan()
     featured_saints = (
         SantProfile.query.filter_by(is_published=True).order_by(SantProfile.created_at.desc()).limit(4).all()
     )
@@ -48,7 +46,6 @@ def home():
         live_now=live_now,
         latest_posts=latest_posts,
         todays_abhang=todays_abhang,
-        todays_vachan=todays_vachan,
         featured_saints=featured_saints,
         featured_kirtankars=featured_kirtankars,
         reading_highlights=reading_highlights,
