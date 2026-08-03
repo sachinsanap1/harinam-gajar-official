@@ -225,6 +225,8 @@ class KirtankarProfile(db.Model):
     slug = db.Column(db.String(180), unique=True, nullable=False, index=True)
     honorific = db.Column(db.String(60))                # e.g. ह.भ.प., Maharaj
     photo_url = db.Column(db.String(400))
+    photo_data = db.Column(db.LargeBinary, nullable=True)
+    photo_mimetype = db.Column(db.String(100), nullable=True)
     short_intro = db.Column(db.String(400))
     full_bio = db.Column(db.Text)
     village = db.Column(db.String(120))
