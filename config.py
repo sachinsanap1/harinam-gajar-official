@@ -55,9 +55,14 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
 
     # --- Cloudinary (audio file storage — see services/cloudinary_upload.py) ---
-    # Get these three from your Cloudinary dashboard (cloudinary.com/console),
-    # top-right "Account Details" card. Set them in .env / Vercel env vars.
+    # Get these from your Cloudinary dashboard (cloudinary.com/console).
+    # CLOUD_NAME + UPLOAD_PRESET are used client-side (safe to expose —
+    # that's what "unsigned" presets are for) so the browser can upload
+    # audio straight to Cloudinary, bypassing Vercel's ~4.5MB serverless
+    # request-body limit entirely. API_KEY/API_SECRET stay server-side
+    # only, used just for deleting a clip when it's replaced/removed.
     CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_UPLOAD_PRESET = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "")
     CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "")
     CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
 
