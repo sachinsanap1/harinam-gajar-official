@@ -10,6 +10,7 @@ from models import (
 from forms import PostForm
 from services.youtube_sync import full_sync, YouTubeSyncError, get_sync_status
 from services.abhang_rotation import set_todays_abhang, get_todays_abhang
+from services.cloudinary_upload import upload_audio, delete_audio, CloudinaryUploadError
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -49,12 +50,6 @@ def clean_text(value):
 ALLOWED_PHOTO_MIMETYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_PHOTO_BYTES = 4 * 1024 * 1024  # 4 MB — keeps individual DB rows small
 
-ALLOWED_AUDIO_MIMETYPES = {
-    "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac",
-    "audio/ogg", "audio/wav", "audio/x-wav", "audio/webm",
-}
-MAX_AUDIO_BYTES = 15 * 1024 * 1024  # 15 MB — a few minutes of audio, keeps rows reasonable
-
 
 def read_uploaded_photo(file_storage: "FileStorage"):
     """
@@ -72,25 +67,6 @@ def read_uploaded_photo(file_storage: "FileStorage"):
         return None, None
     if len(data) > MAX_PHOTO_BYTES:
         raise ValueError("Photo is too large — please use an image under 4 MB.")
-    return data, mimetype
-
-
-def read_uploaded_audio(file_storage: "FileStorage"):
-    """
-    Validate + read an uploaded audio file from request.files.get(...).
-    Returns (bytes, mimetype), or (None, None) if no file was chosen.
-    Raises ValueError with a user-facing message on invalid input.
-    """
-    if not file_storage or not file_storage.filename:
-        return None, None
-    mimetype = (file_storage.mimetype or "").lower()
-    if mimetype not in ALLOWED_AUDIO_MIMETYPES:
-        raise ValueError("Audio must be an MP3, M4A/AAC, OGG, WAV, or WEBM file.")
-    data = file_storage.read()
-    if not data:
-        return None, None
-    if len(data) > MAX_AUDIO_BYTES:
-        raise ValueError("Audio file is too large — please use a file under 15 MB.")
     return data, mimetype
 
 
@@ -599,8 +575,10 @@ def reading_new():
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
         try:
-            audio_data, audio_mimetype = read_uploaded_audio(request.files.get("audio"))
-        except ValueError as e:
+            # Admin selects audio -> uploads to Cloudinary -> Cloudinary
+            # returns a URL -> we save only that URL (+ public_id).
+            audio_url, audio_public_id = upload_audio(request.files.get("audio"))
+        except CloudinaryUploadError as e:
             flash(str(e), "error")
             return render_template("admin/reading_form.html", text=None)
         if not title or not content:
@@ -613,8 +591,8 @@ def reading_new():
                 category=request.form.get("category", "other"),
                 content_marathi=content,
                 source=request.form.get("source", "").strip() or None,
-                audio_data=audio_data,
-                audio_mimetype=audio_mimetype,
+                audio_url=audio_url,
+                audio_public_id=audio_public_id,
                 order_index=request.form.get("order_index", 0, type=int),
                 is_published=bool(request.form.get("is_published")),
             )
@@ -632,8 +610,8 @@ def reading_edit(text_id):
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
         try:
-            audio_data, audio_mimetype = read_uploaded_audio(request.files.get("audio"))
-        except ValueError as e:
+            audio_url, audio_public_id = upload_audio(request.files.get("audio"))
+        except CloudinaryUploadError as e:
             flash(str(e), "error")
             return render_template("admin/reading_form.html", text=text)
         if not title or not content:
@@ -644,12 +622,20 @@ def reading_edit(text_id):
             text.category = request.form.get("category", "other")
             text.content_marathi = content
             text.source = request.form.get("source", "").strip() or None
-            if audio_data:
-                # A new file was uploaded — replace the stored audio.
-                text.audio_data = audio_data
-                text.audio_mimetype = audio_mimetype
+            if audio_url:
+                # A new file was uploaded to Cloudinary — point at the new
+                # clip and clean up the old one (Cloudinary asset + any
+                # legacy DB-stored bytes from before this switch).
+                delete_audio(text.audio_public_id)
+                text.audio_url = audio_url
+                text.audio_public_id = audio_public_id
+                text.audio_data = None
+                text.audio_mimetype = None
             elif request.form.get("remove_audio"):
                 # "Remove current audio" was ticked and no replacement was given.
+                delete_audio(text.audio_public_id)
+                text.audio_url = None
+                text.audio_public_id = None
                 text.audio_data = None
                 text.audio_mimetype = None
             # else: no file chosen and box not ticked -> keep existing audio as-is.
