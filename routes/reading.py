@@ -423,7 +423,9 @@ def library():
         )
         .all()
     )
-
+    print("ID:", text.id)
+    print("Audio Data:", bool(text.audio_data))
+    print("Audio URL:", text.audio_url)
     return render_template(
         "reading/library.html",
         texts=texts,
