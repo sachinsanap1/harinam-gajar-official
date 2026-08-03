@@ -2,7 +2,7 @@
 {% block title %}{{ 'Edit Reading' if text else 'New Reading' }}{% endblock %}
 {% block admin_content %}
 <h1>{{ 'Edit Reading Entry' if text else 'New Reading Entry' }}</h1>
-<form method="POST" style="max-width:680px;">
+<form method="POST" enctype="multipart/form-data" style="max-width:680px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-field"><label>Title</label><input type="text" name="title" value="{{ text.title if text else '' }}" required></div>
   <div class="form-field"><label>URL slug (optional — auto-generated)</label><input type="text" name="slug" value="{{ text.slug if text else '' }}"></div>
@@ -16,7 +16,22 @@
   </div>
   <div class="form-field"><label>Full Marathi text</label><textarea name="content_marathi" rows="14" required>{{ text.content_marathi if text else '' }}</textarea></div>
   <div class="form-field"><label>Source</label><input type="text" name="source" value="{{ text.source if text else '' }}"></div>
-  <div class="form-field"><label>Audio URL (optional — leave blank if none)</label><input type="text" name="audio_url" value="{{ text.audio_url if text else '' }}"></div>
+  <div class="form-field">
+    <label>Audio</label>
+    {% if text and text.audio_data %}
+    <div style="margin-bottom:8px;">
+      <audio controls src="{{ url_for('reading.audio', text_id=text.id) }}" style="height:32px;"></audio>
+    </div>
+    <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" name="remove_audio" style="width:auto;"> Remove current audio
+    </label>
+    {% endif %}
+    <input type="file" name="audio" accept="audio/mpeg,audio/mp3,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm">
+    <small style="opacity:0.6; display:block; margin-top:4px;">
+      MP3, M4A/AAC, OGG, WAV or WEBM, up to 15 MB.
+      {% if text and text.audio_data %}Leave blank to keep the current audio.{% endif %}
+    </small>
+  </div>
   <div class="form-field"><label>Sort order (lower shows first)</label><input type="number" name="order_index" value="{{ text.order_index if text else 0 }}"></div>
   <div class="form-field"><label><input type="checkbox" name="is_published" {% if not text or text.is_published %}checked{% endif %} style="width:auto;"> Published</label></div>
   <button class="btn btn-primary" type="submit">Save</button>
