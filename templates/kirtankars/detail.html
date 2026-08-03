@@ -1,51 +1,367 @@
 {% extends "base.html" %}
-{% block title %}{{ kirtankar.honorific }} {{ kirtankar.full_name }} — {{ site_name }}{% endblock %}
-{% block meta_description %}{{ kirtankar.meta_description or kirtankar.short_intro }}{% endblock %}
+
+{% block title %}
+{{ kirtankar.honorific }} {{ kirtankar.full_name }} — {{ site_name }}
+{% endblock %}
+
+{% block meta_description %}
+{{ kirtankar.meta_description or kirtankar.short_intro }}
+{% endblock %}
+
 {% block content %}
+
 <article class="container" style="max-width:800px;">
-  <div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; margin-bottom:24px;">
-    {% if kirtankar.photo_url %}<img src="{{ kirtankar.photo_url }}" style="width:160px; height:160px; border-radius:50%; object-fit:cover;" alt="{{ kirtankar.full_name }}">{% endif %}
-    <div>
-      <h1 class="display" style="font-size:2rem;">{{ kirtankar.honorific }} {{ kirtankar.full_name }}</h1>
-      {% if kirtankar.village or kirtankar.district or kirtankar.state %}
-      <p style="opacity:0.65;">📍 {{ kirtankar.village }}{% if kirtankar.village %}, {% endif %}{{ kirtankar.district }}{% if kirtankar.district %}, {% endif %}{{ kirtankar.state }}</p>
+
+  <!-- Kirtankar profile header -->
+  <div
+    style="
+      display:flex;
+      gap:24px;
+      align-items:flex-start;
+      flex-wrap:wrap;
+      margin-bottom:24px;
+    "
+  >
+
+    <!-- Profile image from PostgreSQL database -->
+    {% if kirtankar.photo_data %}
+
+    <img
+      src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id) }}"
+      style="
+        width:160px;
+        height:160px;
+        border-radius:50%;
+        object-fit:cover;
+        border:3px solid var(--ivory-deep);
+      "
+      alt="{{ kirtankar.full_name }}"
+    >
+
+    <!-- Old image URL fallback -->
+    {% elif kirtankar.photo_url %}
+
+    <img
+      src="{{ kirtankar.photo_url }}"
+      style="
+        width:160px;
+        height:160px;
+        border-radius:50%;
+        object-fit:cover;
+        border:3px solid var(--ivory-deep);
+      "
+      alt="{{ kirtankar.full_name }}"
+    >
+
+    {% endif %}
+
+
+    <!-- Kirtankar information -->
+    <div style="flex:1; min-width:250px;">
+
+      <h1
+        class="display"
+        style="
+          font-size:2rem;
+          margin-top:0;
+        "
+      >
+        {% if kirtankar.honorific %}
+          {{ kirtankar.honorific }}
+        {% endif %}
+
+        {{ kirtankar.full_name }}
+      </h1>
+
+
+      <!-- Location -->
+      {% if
+        kirtankar.village
+        or kirtankar.district
+        or kirtankar.state
+      %}
+
+      <p style="opacity:0.65;">
+
+        📍
+
+        {% if kirtankar.village %}
+          {{ kirtankar.village }}
+        {% endif %}
+
+        {% if kirtankar.district %}
+
+          {% if kirtankar.village %}, {% endif %}
+
+          {{ kirtankar.district }}
+
+        {% endif %}
+
+        {% if kirtankar.state %}
+
+          {% if
+            kirtankar.village
+            or kirtankar.district
+          %}, {% endif %}
+
+          {{ kirtankar.state }}
+
+        {% endif %}
+
+      </p>
+
       {% endif %}
-      <p class="card-meta">👁 {{ '{:,}'.format(kirtankar.view_count or 0) }} views</p>
-      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
-        {% if kirtankar.youtube_url %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" href="{{ kirtankar.youtube_url }}" target="_blank" rel="noopener">YouTube</a>{% endif %}
-        {% if kirtankar.facebook_url %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" href="{{ kirtankar.facebook_url }}" target="_blank" rel="noopener">Facebook</a>{% endif %}
-        {% if kirtankar.instagram_url %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" href="{{ kirtankar.instagram_url }}" target="_blank" rel="noopener">Instagram</a>{% endif %}
-        {% if kirtankar.website_url %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" href="{{ kirtankar.website_url }}" target="_blank" rel="noopener">Website</a>{% endif %}
+
+
+      <!-- View count -->
+      <p class="card-meta">
+
+        👁
+
+        {{ '{:,}'.format(kirtankar.view_count or 0) }}
+
+        views
+
+      </p>
+
+
+      <!-- Social links -->
+      <div
+        style="
+          display:flex;
+          gap:10px;
+          margin-top:10px;
+          flex-wrap:wrap;
+        "
+      >
+
+        {% if kirtankar.youtube_url %}
+
+        <a
+          class="btn btn-outline"
+          style="
+            color:var(--ink);
+            border-color:var(--ink-soft);
+            padding:6px 14px;
+            font-size:0.85rem;
+          "
+          href="{{ kirtankar.youtube_url }}"
+          target="_blank"
+          rel="noopener"
+        >
+          YouTube
+        </a>
+
+        {% endif %}
+
+
+        {% if kirtankar.facebook_url %}
+
+        <a
+          class="btn btn-outline"
+          style="
+            color:var(--ink);
+            border-color:var(--ink-soft);
+            padding:6px 14px;
+            font-size:0.85rem;
+          "
+          href="{{ kirtankar.facebook_url }}"
+          target="_blank"
+          rel="noopener"
+        >
+          Facebook
+        </a>
+
+        {% endif %}
+
+
+        {% if kirtankar.instagram_url %}
+
+        <a
+          class="btn btn-outline"
+          style="
+            color:var(--ink);
+            border-color:var(--ink-soft);
+            padding:6px 14px;
+            font-size:0.85rem;
+          "
+          href="{{ kirtankar.instagram_url }}"
+          target="_blank"
+          rel="noopener"
+        >
+          Instagram
+        </a>
+
+        {% endif %}
+
+
+        {% if kirtankar.website_url %}
+
+        <a
+          class="btn btn-outline"
+          style="
+            color:var(--ink);
+            border-color:var(--ink-soft);
+            padding:6px 14px;
+            font-size:0.85rem;
+          "
+          href="{{ kirtankar.website_url }}"
+          target="_blank"
+          rel="noopener"
+        >
+          Website
+        </a>
+
+        {% endif %}
+
       </div>
+
     </div>
+
   </div>
 
-  {% if kirtankar.short_intro %}<p style="font-size:1.05rem; opacity:0.85;">{{ kirtankar.short_intro }}</p>{% endif %}
-  {% if kirtankar.full_bio %}<div style="white-space:pre-line; margin-top:16px; line-height:1.8;">{{ kirtankar.full_bio }}</div>{% endif %}
 
+  <!-- Short introduction -->
+  {% if kirtankar.short_intro %}
+
+  <p
+    style="
+      font-size:1.05rem;
+      opacity:0.85;
+      line-height:1.8;
+    "
+  >
+    {{ kirtankar.short_intro }}
+  </p>
+
+  {% endif %}
+
+
+  <!-- Full biography -->
+  {% if kirtankar.full_bio %}
+
+  <h2 style="margin-top:32px;">
+    चरित्र
+  </h2>
+
+  <div
+    style="
+      white-space:pre-line;
+      margin-top:16px;
+      line-height:1.8;
+    "
+  >
+    {{ kirtankar.full_bio }}
+  </div>
+
+  {% endif %}
+
+
+  <!-- Popular Kirtans -->
   {% if kirtankar.popular_kirtans %}
-  <h3 style="margin-top:32px;">लोकप्रिय कीर्तने</h3>
-  <div style="white-space:pre-line; line-height:1.8;">{{ kirtankar.popular_kirtans }}</div>
-  {% endif %}
 
-  {% if kirtankar.special_topics %}
-  <h3 style="margin-top:32px;">विशेष विषय</h3>
-  <div style="white-space:pre-line; line-height:1.8;">{{ kirtankar.special_topics }}</div>
-  {% endif %}
+  <h3 style="margin-top:32px;">
+    लोकप्रिय कीर्तने
+  </h3>
 
-  {% if kirtankar.is_contact_public and kirtankar.contact_info %}
-  <h3 style="margin-top:32px;">संपर्क</h3>
-  <p>{{ kirtankar.contact_info }}</p>
-  {% endif %}
-
-  {% if related %}
-  <div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span></div>
-  <h3>संबंधित कीर्तनकार</h3>
-  <div class="card-grid">
-    {% for r in related %}
-    <a class="post-card" href="{{ url_for('kirtankars.detail', slug=r.slug) }}"><div class="card-body"><h3>{{ r.full_name }}</h3></div></a>
-    {% endfor %}
+  <div
+    style="
+      white-space:pre-line;
+      line-height:1.8;
+    "
+  >
+    {{ kirtankar.popular_kirtans }}
   </div>
+
   {% endif %}
+
+
+  <!-- Special topics -->
+  {% if kirtankar.special_topics %}
+
+  <h3 style="margin-top:32px;">
+    विशेष विषय
+  </h3>
+
+  <div
+    style="
+      white-space:pre-line;
+      line-height:1.8;
+    "
+  >
+    {{ kirtankar.special_topics }}
+  </div>
+
+  {% endif %}
+
+
+  <!-- Contact information -->
+  {% if
+    kirtankar.is_contact_public
+    and kirtankar.contact_info
+  %}
+
+  <h3 style="margin-top:32px;">
+    संपर्क
+  </h3>
+
+  <p>
+    {{ kirtankar.contact_info }}
+  </p>
+
+  {% endif %}
+
+
+  <!-- Related Kirtankars -->
+  {% if related %}
+
+  <div class="section-divider">
+
+    <span class="step"></span>
+
+    <span class="step"></span>
+
+    <span class="step"></span>
+
+  </div>
+
+
+  <h3>
+    संबंधित कीर्तनकार
+  </h3>
+
+
+  <div class="card-grid">
+
+    {% for r in related %}
+
+    <a
+      class="post-card"
+      href="{{ url_for('kirtankars.detail', slug=r.slug) }}"
+    >
+
+      <div class="card-body">
+
+        <h3>
+
+          {% if r.honorific %}
+            {{ r.honorific }}
+          {% endif %}
+
+          {{ r.full_name }}
+
+        </h3>
+
+      </div>
+
+    </a>
+
+    {% endfor %}
+
+  </div>
+
+  {% endif %}
+
 </article>
+
 {% endblock %}
