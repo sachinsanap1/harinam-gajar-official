@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>All Videos</h2></div>
+  <div class="card-grid">
+    {% for v in pagination.items %}
+    <a class="video-card" href="{{ v.url }}" target="_blank" rel="noopener">
+      <div class="thumb-wrap">
+        {% if v.thumbnail_url %}<img src="{{ v.thumbnail_url }}" alt="{{ v.title }}">{% endif %}
+        {% if v.is_live_now %}<span class="badge-live">LIVE</span>{% endif %}
+      </div>
+      <div class="card-body">
+        <h3>{{ v.title }}</h3>
+        <div class="card-meta">{{ v.published_at.strftime('%d %b %Y') if v.published_at else '' }} · {{ '{:,}'.format(v.view_count) }} views</div>
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">No videos synced yet.</p>
+    {% endfor %}
+  </div>
+  {% if pagination.pages > 1 %}
+  <div style="display:flex; gap:10px; margin-top:32px; justify-content:center;">
+    {% if pagination.has_prev %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft);" href="?page={{ pagination.prev_num }}">← Prev</a>{% endif %}
+    {% if pagination.has_next %}<a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft);" href="?page={{ pagination.next_num }}">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

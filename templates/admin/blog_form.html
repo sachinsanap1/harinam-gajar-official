@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit Post' if post else 'New Post' }}{% endblock %}
+{% block admin_content %}
+<h1>{{ 'Edit Post' if post else 'New Post' }}</h1>
+<form method="POST" style="max-width:720px;">
+  {{ form.hidden_tag() }}
+  <div class="form-field">{{ form.title.label }} {{ form.title() }}</div>
+  <div class="form-field">{{ form.slug.label }} {{ form.slug(placeholder="auto-generated if left blank") }}</div>
+  <div class="form-field">{{ form.category_id.label }} {{ form.category_id() }}</div>
+  <div class="form-field">{{ form.excerpt.label }} {{ form.excerpt(rows=2) }}</div>
+  <div class="form-field">{{ form.content_html.label }} {{ form.content_html(rows=14) }}
+    <div style="font-size:0.78rem; opacity:0.6; margin-top:4px;">HTML supported. Wire in a rich text editor (e.g. TinyMCE/Quill via CDN) here for a WYSIWYG experience.</div>
+  </div>
+  <div class="form-field">{{ form.status.label }} {{ form.status() }}</div>
+  <h3 style="margin-top:24px;">SEO</h3>
+  <div class="form-field">{{ form.meta_title.label }} {{ form.meta_title() }}</div>
+  <div class="form-field">{{ form.meta_description.label }} {{ form.meta_description(rows=2) }}</div>
+  <div class="form-field">{{ form.meta_keywords.label }} {{ form.meta_keywords() }}</div>
+  <button class="btn btn-primary" type="submit">Save Post</button>
+</form>
+{% endblock %}

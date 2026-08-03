@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block admin_content %}
+<h1>Dashboard</h1>
+<div class="stat-cards">
+  <div class="stat-card"><div class="num">{{ stats.videos }}</div><div class="label">Videos synced</div></div>
+  <div class="stat-card"><div class="num">{{ stats.published_posts }}</div><div class="label">Published posts</div></div>
+  <div class="stat-card"><div class="num">{{ stats.abhangs }}</div><div class="label">Abhangs stored</div></div>
+  <div class="stat-card"><div class="num">{{ stats.saints }}</div><div class="label">Saint profiles</div></div>
+  <div class="stat-card"><div class="num">{{ stats.kirtankars }}</div><div class="label">Kirtankar profiles</div></div>
+  <div class="stat-card"><div class="num">{{ stats.reading_texts }}</div><div class="label">Reading library entries</div></div>
+  <div class="stat-card"><div class="num">{{ stats.unread_messages }}</div><div class="label">Unread messages</div></div>
+</div>
+
+{% if todays_abhang %}
+<div class="quote-band" style="margin-bottom:20px;">
+  <div class="mr" style="white-space: pre-line; font-size:1.1rem;">{{ todays_abhang.text_marathi }}</div>
+  <p style="opacity:0.7; font-size:0.8rem;">Today's Abhang{% if todays_abhang.saint_name %} — {{ todays_abhang.saint_name }}{% endif %}</p>
+</div>
+{% endif %}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+  <div>
+    <h3>Recent Posts</h3>
+    <table class="admin-table">
+      <tr><th>Title</th><th>Status</th></tr>
+      {% for p in recent_posts %}
+      <tr><td>{{ p.title }}</td><td><span class="pill pill-{{ p.status if p.status == 'published' else 'draft' }}">{{ p.status }}</span></td></tr>
+      {% else %}<tr><td colspan="2" style="opacity:0.6;">No posts yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div>
+    <h3>Recently Synced Videos</h3>
+    <table class="admin-table">
+      <tr><th>Title</th><th>Kind</th></tr>
+      {% for v in recent_videos %}
+      <tr><td>{{ v.title }}</td><td>{{ v.kind }}</td></tr>
+      {% else %}<tr><td colspan="2" style="opacity:0.6;">No videos synced yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

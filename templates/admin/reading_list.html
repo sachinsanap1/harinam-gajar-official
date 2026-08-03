@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Reading Library{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Devotional Reading Library</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.reading_new') }}">+ New Entry</a>
+</div>
+<p style="opacity:0.65; font-size:0.85rem;">Run <code>flask seed-reading-library</code> once from the terminal to pre-create the 12 titles from the brief as drafts — then paste verified text into each and publish.</p>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Title</th><th>Category</th><th>Status</th><th></th></tr>
+  {% for t in texts %}
+  <tr>
+    <td>{{ t.title }}</td>
+    <td>{{ t.category }}</td>
+    <td><span class="pill pill-{{ 'published' if t.is_published else 'draft' }}">{{ 'published' if t.is_published else 'draft' }}</span></td>
+    <td style="display:flex; gap:8px;">
+      <a href="{{ url_for('admin.reading_edit', text_id=t.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.reading_delete', text_id=t.id) }}" onsubmit="return confirm('Delete this entry?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="opacity:0.6;">No entries yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

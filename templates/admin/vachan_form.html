@@ -1,0 +1,14 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit Vachan' if vachan else 'New Vachan' }}{% endblock %}
+{% block admin_content %}
+<h1>{{ 'Edit Sant Vachan' if vachan else 'New Sant Vachan' }}</h1>
+<form method="POST" style="max-width:640px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-field"><label>Quote text</label><textarea name="quote_text" rows="4" required>{{ vachan.quote_text if vachan else '' }}</textarea></div>
+  <div class="form-field"><label>Saint name (optional)</label><input type="text" name="saint_name" value="{{ vachan.saint_name if vachan else '' }}"></div>
+  <div class="form-field"><label>Simple meaning (optional)</label><textarea name="meaning" rows="3">{{ vachan.meaning if vachan else '' }}</textarea></div>
+  <div class="form-field"><label>Saint image URL (optional)</label><input type="text" name="image_url" value="{{ vachan.image_url if vachan else '' }}"></div>
+  <div class="form-field"><label><input type="checkbox" name="is_active" {% if not vachan or vachan.is_active %}checked{% endif %} style="width:auto;"> Active (included in daily rotation)</label></div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

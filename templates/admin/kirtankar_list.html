@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Kirtankars{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Kirtankars / Maharajs</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.kirtankar_new') }}">+ New Profile</a>
+</div>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Name</th><th>District</th><th>Views</th><th>Status</th><th></th></tr>
+  {% for k in kirtankars %}
+  <tr>
+    <td>{{ k.honorific }} {{ k.full_name }}</td>
+    <td>{{ k.district or '—' }}</td>
+    <td>{{ '{:,}'.format(k.view_count or 0) }}</td>
+    <td><span class="pill pill-{{ 'published' if k.is_published else 'draft' }}">{{ 'published' if k.is_published else 'draft' }}</span></td>
+    <td style="display:flex; gap:8px;">
+      <a href="{{ url_for('admin.kirtankar_edit', kirtankar_id=k.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.kirtankar_delete', kirtankar_id=k.id) }}" onsubmit="return confirm('Delete this profile?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" style="opacity:0.6;">No profiles yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

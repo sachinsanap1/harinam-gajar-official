@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}Blog{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Blog Posts</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.blog_new') }}">+ New Post</a>
+</div>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Title</th><th>Status</th><th>Updated</th><th></th></tr>
+  {% for p in posts %}
+  <tr>
+    <td>{{ p.title }}</td>
+    <td><span class="pill pill-{{ p.status if p.status == 'published' else 'draft' }}">{{ p.status }}</span></td>
+    <td>{{ p.updated_at.strftime('%d %b %Y') if p.updated_at else '' }}</td>
+    <td style="display:flex; gap:8px;">
+      <a href="{{ url_for('admin.blog_edit', post_id=p.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.blog_delete', post_id=p.id) }}" onsubmit="return confirm('Delete this post?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="opacity:0.6;">No posts yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

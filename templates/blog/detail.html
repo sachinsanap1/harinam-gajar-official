@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ post.meta_title or post.title }} — {{ site_name }}{% endblock %}
+{% block meta_description %}{{ post.meta_description or post.excerpt }}{% endblock %}
+{% block content %}
+<article class="container" style="max-width:760px;">
+  {% if post.featured_image %}<img src="{{ post.featured_image }}" style="border-radius:14px; margin-bottom:24px;" alt="{{ post.title }}">{% endif %}
+  <h1 class="display" style="font-size:2.2rem;">{{ post.title }}</h1>
+  <div class="card-meta" style="margin-bottom:24px;">
+    {% if post.author %}By {{ post.author.name }} · {% endif %}
+    {{ post.published_at.strftime('%d %b %Y') if post.published_at else '' }}
+    {% if post.category %} · {{ post.category.name }}{% endif %}
+  </div>
+  <div class="post-content">{{ post.content_html | safe }}</div>
+
+  {% if related %}
+  <div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span></div>
+  <h3>Related</h3>
+  <div class="card-grid">
+    {% for r in related %}
+    <a class="post-card" href="{{ url_for('blog.detail', slug=r.slug) }}"><div class="card-body"><h3>{{ r.title }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

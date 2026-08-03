@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ text.title }} — {{ site_name }}{% endblock %}
+{% block content %}
+<article class="container" style="max-width:720px;" id="reading-article">
+  <span class="pill pill-draft">{{ category_labels.get(text.category, text.category) }}</span>
+  <h1 class="display" style="font-size:2rem; margin-top:10px;">{{ text.title }}</h1>
+  {% if text.source %}<p style="opacity:0.55; font-size:0.85rem;">स्रोत: {{ text.source }}</p>{% endif %}
+
+  <div style="display:flex; gap:10px; margin:18px 0; flex-wrap:wrap; align-items:center;">
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="changeFontSize(-2)">A-</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="changeFontSize(2)">A+</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="copyText()">📋 Copy</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="window.print()">🖨 Print</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="shareText()">🔗 Share</button>
+    {% if text.audio_url %}<audio controls src="{{ text.audio_url }}" style="height:32px;"></audio>{% endif %}
+  </div>
+
+  <div id="reading-text" style="white-space:pre-line; line-height:2.1; font-size:1.15rem;">{{ text.content_marathi }}</div>
+
+  <div style="display:flex; justify-content:space-between; margin-top:40px; padding-top:20px; border-top:1px solid var(--ivory-deep);">
+    {% if prev_text %}<a href="{{ url_for('reading.detail', slug=prev_text.slug) }}">← {{ prev_text.title }}</a>{% else %}<span></span>{% endif %}
+    {% if next_text %}<a href="{{ url_for('reading.detail', slug=next_text.slug) }}">{{ next_text.title }} →</a>{% endif %}
+  </div>
+</article>
+
+<script>
+function changeFontSize(delta) {
+  const el = document.getElementById('reading-text');
+  const current = parseFloat(window.getComputedStyle(el).fontSize);
+  el.style.fontSize = (current + delta) + 'px';
+}
+function copyText() {
+  navigator.clipboard.writeText(document.getElementById('reading-text').innerText);
+  alert('मजकूर कॉपी झाला.');
+}
+function shareText() {
+  if (navigator.share) {
+    navigator.share({ title: document.title, url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert('लिंक कॉपी झाली.');
+  }
+}
+</script>
+{% endblock %}

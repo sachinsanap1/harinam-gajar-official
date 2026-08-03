@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container" style="max-width:640px;">
+  <div class="section-head"><h2>Contact Us</h2></div>
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-field">{{ form.name.label }} {{ form.name() }}</div>
+    <div class="form-field">{{ form.email.label }} {{ form.email() }}</div>
+    <div class="form-field">{{ form.phone.label }} {{ form.phone() }}</div>
+    <div class="form-field">{{ form.subject.label }} {{ form.subject() }}</div>
+    <div class="form-field">{{ form.message.label }} {{ form.message(rows=5) }}</div>
+    <button class="btn btn-primary" type="submit">Send Message</button>
+  </form>
+</section>
+{% endblock %}

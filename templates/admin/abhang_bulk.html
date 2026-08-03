@@ -1,0 +1,26 @@
+{% extends "admin/base.html" %}
+{% block title %}Bulk Add Abhangs{% endblock %}
+{% block admin_content %}
+<h1>Bulk Paste Abhangs</h1>
+<p style="opacity:0.7; font-size:0.9rem; max-width:640px;">
+  Paste multiple abhangs at once. Separate each one with a <strong>blank line</strong>.
+  Optionally add an attribution line right after the text, starting with <code>@</code>,
+  formatted as <code>@Saint Name | Source</code> — both parts optional.
+</p>
+<div style="background:var(--ivory-deep); border-radius:10px; padding:14px 18px; font-size:0.85rem; margin-bottom:20px; max-width:640px;">
+  <strong>Example:</strong><br>
+  <pre style="white-space:pre-wrap; margin:6px 0 0;">पंढरीचा वास चंद्रभागे स्नान
+आणिक दर्शन विठोबाचे
+@Sant Tukaram | Tukaram Gatha
+
+दुसरा अभंग इथे...
+@Sant Namdev</pre>
+</div>
+<form method="POST" style="max-width:640px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-field">
+    <textarea name="bulk_text" rows="18" placeholder="Paste your abhangs here..."></textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Add All</button>
+</form>
+{% endblock %}

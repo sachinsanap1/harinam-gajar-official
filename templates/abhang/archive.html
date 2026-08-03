@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}अभंग संग्रह — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>अभंग संग्रह</h2></div>
+  <div class="card-grid">
+    {% for a in abhangs %}
+    <a class="post-card" href="{{ url_for('abhang_public.view', abhang_id=a.id) }}">
+      <div class="card-body">
+        <p style="white-space:pre-line; font-family:var(--font-mr);">{{ a.text_marathi[:90] }}{% if a.text_marathi|length > 90 %}…{% endif %}</p>
+        {% if a.saint_name %}<div class="card-meta">{{ a.saint_name }}</div>{% endif %}
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">अद्याप कोणताही अभंग जोडलेला नाही.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

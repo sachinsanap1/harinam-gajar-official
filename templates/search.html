@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}"{{ q }}" शोध परिणाम — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>"{{ q }}" साठी शोध परिणाम</h2></div>
+
+  {% set total = videos_results|length + posts_results|length + saints_results|length + kirtankars_results|length + reading_results|length + abhang_results|length %}
+  {% if q and total == 0 %}
+  <p style="opacity:0.65;">काहीही सापडले नाही. वेगळे शब्द वापरून पुन्हा शोधा, किंवा <a href="{{ url_for('reading.library') }}" style="color:var(--kumkum);">भक्ती संग्रह</a> किंवा <a href="{{ url_for('saints.list_saints') }}" style="color:var(--kumkum);">संत चरित्र</a> ब्राउझ करा.</p>
+  {% endif %}
+
+  {% if videos_results %}
+  <h3>🎥 व्हिडिओ</h3>
+  <div class="card-grid">
+    {% for v in videos_results %}
+    <a class="video-card" href="{{ v.url }}" target="_blank" rel="noopener"><div class="thumb-wrap">{% if v.thumbnail_url %}<img src="{{ v.thumbnail_url }}">{% endif %}</div><div class="card-body"><h3>{{ v.title }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if saints_results %}
+  <h3 style="margin-top:32px;">👤 संत</h3>
+  <div class="card-grid">
+    {% for s in saints_results %}
+    <a class="post-card" href="{{ url_for('saints.detail', slug=s.slug) }}"><div class="card-body"><h3>{{ s.name }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if kirtankars_results %}
+  <h3 style="margin-top:32px;">🎤 कीर्तनकार</h3>
+  <div class="card-grid">
+    {% for k in kirtankars_results %}
+    <a class="post-card" href="{{ url_for('kirtankars.detail', slug=k.slug) }}"><div class="card-body"><h3>{{ k.full_name }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if reading_results %}
+  <h3 style="margin-top:32px;">📖 भक्ती संग्रह</h3>
+  <div class="card-grid">
+    {% for t in reading_results %}
+    <a class="post-card" href="{{ url_for('reading.detail', slug=t.slug) }}"><div class="card-body"><h3>{{ t.title }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if abhang_results %}
+  <h3 style="margin-top:32px;">🪔 अभंग</h3>
+  <div class="card-grid">
+    {% for a in abhang_results %}
+    <a class="post-card" href="{{ url_for('abhang_public.view', abhang_id=a.id) }}"><div class="card-body"><p style="white-space:pre-line;">{{ a.text_marathi[:80] }}…</p></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if posts_results %}
+  <h3 style="margin-top:32px;">📝 ब्लॉग</h3>
+  <div class="card-grid">
+    {% for p in posts_results %}
+    <a class="post-card" href="{{ url_for('blog.detail', slug=p.slug) }}"><div class="card-body"><h3>{{ p.title }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

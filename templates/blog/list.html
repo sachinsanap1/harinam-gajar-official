@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>Blog</h2></div>
+  <div style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;">
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:8px 16px;" href="{{ url_for('blog.list_posts') }}">All</a>
+    {% for c in categories %}
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:8px 16px;" href="{{ url_for('blog.list_posts', category=c.slug) }}">{{ c.name }}</a>
+    {% endfor %}
+  </div>
+  <div class="card-grid">
+    {% for p in pagination.items %}
+    <a class="post-card" href="{{ url_for('blog.detail', slug=p.slug) }}">
+      <div class="thumb-wrap">{% if p.featured_image %}<img src="{{ p.featured_image }}" alt="{{ p.title }}">{% endif %}</div>
+      <div class="card-body">
+        <h3>{{ p.title }}</h3>
+        <p style="font-size:0.88rem; opacity:0.75;">{{ p.excerpt }}</p>
+        <div class="card-meta">{{ p.published_at.strftime('%d %b %Y') if p.published_at else '' }}</div>
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">No posts published yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

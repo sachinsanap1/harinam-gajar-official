@@ -1,0 +1,35 @@
+{% extends "admin/base.html" %}
+{% block title %}Sant Vachan{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>आजचा संतविचार — Sant Vachan</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.vachan_new') }}">+ New Vachan</a>
+</div>
+<p style="opacity:0.65; font-size:0.9rem;">One quote rotates on the homepage each day, same pattern as Abhangs. Use "Set as Today" to override.</p>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Quote</th><th>Saint</th><th>Status</th><th></th></tr>
+  {% for v in vachans %}
+  <tr>
+    <td style="max-width:340px;">
+      {{ v.quote_text[:100] }}{% if v.quote_text|length > 100 %}…{% endif %}
+      {% if todays_vachan and todays_vachan.id == v.id %}<br><span class="pill pill-published">Today</span>{% endif %}
+    </td>
+    <td>{{ v.saint_name or '—' }}</td>
+    <td><span class="pill pill-{{ 'published' if v.is_active else 'draft' }}">{{ 'active' if v.is_active else 'inactive' }}</span></td>
+    <td style="display:flex; gap:8px; flex-wrap:wrap;">
+      <form method="POST" action="{{ url_for('admin.vachan_set_today', vachan_id=v.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);" type="submit">Set as Today</button>
+      </form>
+      <a href="{{ url_for('admin.vachan_edit', vachan_id=v.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.vachan_delete', vachan_id=v.id) }}" onsubmit="return confirm('Delete?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="opacity:0.6;">No Sant Vachan entries yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

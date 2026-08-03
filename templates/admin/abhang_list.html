@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}Abhangs{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Abhangs</h1>
+  <div style="display:flex; gap:10px;">
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft);" href="{{ url_for('admin.abhang_bulk') }}">+ Bulk Paste</a>
+    <a class="btn btn-primary" href="{{ url_for('admin.abhang_new') }}">+ New Abhang</a>
+  </div>
+</div>
+<p style="opacity:0.65; font-size:0.9rem;">One abhang is shown on the homepage each day, rotating automatically through active abhangs below. Use "Set as Today" to override the rotation for today only.</p>
+
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Text</th><th>Saint</th><th>Status</th><th></th></tr>
+  {% for a in abhangs %}
+  <tr>
+    <td style="max-width:340px; white-space:pre-line;">
+      {{ a.text_marathi[:120] }}{% if a.text_marathi|length > 120 %}…{% endif %}
+      {% if todays_abhang and todays_abhang.id == a.id %}<br><span class="pill pill-published">Today</span>{% endif %}
+    </td>
+    <td>{{ a.saint_name or '—' }}</td>
+    <td><span class="pill pill-{{ 'published' if a.is_active else 'draft' }}">{{ 'active' if a.is_active else 'inactive' }}</span></td>
+    <td style="display:flex; gap:8px; flex-wrap:wrap;">
+      <form method="POST" action="{{ url_for('admin.abhang_set_today', abhang_id=a.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);" type="submit">Set as Today</button>
+      </form>
+      <a href="{{ url_for('admin.abhang_edit', abhang_id=a.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.abhang_delete', abhang_id=a.id) }}" onsubmit="return confirm('Delete this abhang?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="opacity:0.6;">No abhangs yet — add one, or use Bulk Paste to add many at once.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

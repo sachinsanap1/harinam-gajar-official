@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}कीर्तनकार व महाराज — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>कीर्तनकार व महाराज</h2></div>
+  <form method="GET" style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q }}" placeholder="नाव शोधा..." style="flex:1; min-width:200px; padding:10px 14px; border-radius:8px; border:1px solid var(--ivory-deep);">
+    {% if districts %}
+    <select name="district" style="padding:10px 14px; border-radius:8px; border:1px solid var(--ivory-deep);">
+      <option value="">सर्व जिल्हे</option>
+      {% for d in districts %}
+      <option value="{{ d }}" {% if d == district %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <button class="btn btn-primary" type="submit">शोधा</button>
+  </form>
+  <div class="card-grid">
+    {% for k in kirtankars %}
+    <a class="post-card" href="{{ url_for('kirtankars.detail', slug=k.slug) }}">
+      <div class="thumb-wrap">{% if k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">{% endif %}</div>
+      <div class="card-body">
+        <h3>{{ k.honorific }} {{ k.full_name }}</h3>
+        {% if k.short_intro %}<p style="font-size:0.85rem; opacity:0.75;">{{ k.short_intro }}</p>{% endif %}
+        {% if k.village or k.district %}<div class="card-meta">{{ k.village }}{% if k.village and k.district %}, {% endif %}{{ k.district }}</div>{% endif %}
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">अद्याप कोणतेही प्रोफाइल जोडलेले नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}Saints{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Sant Charitra</h1>
+  <a class="btn btn-primary" href="{{ url_for('admin.saint_new') }}">+ New Saint Profile</a>
+</div>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Name</th><th>Tradition</th><th>Status</th><th></th></tr>
+  {% for s in saints %}
+  <tr>
+    <td>{{ s.name }}</td>
+    <td>{{ s.tradition or '—' }}</td>
+    <td><span class="pill pill-{{ 'published' if s.is_published else 'draft' }}">{{ 'published' if s.is_published else 'draft' }}</span></td>
+    <td style="display:flex; gap:8px;">
+      <a href="{{ url_for('admin.saint_edit', saint_id=s.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);">Edit</a>
+      <form method="POST" action="{{ url_for('admin.saint_delete', saint_id=s.id) }}" onsubmit="return confirm('Delete this saint profile?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="opacity:0.6;">No saint profiles yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

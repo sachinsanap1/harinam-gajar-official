@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ saint.name }} — {{ site_name }}{% endblock %}
+{% block meta_description %}{{ saint.meta_description or saint.short_bio }}{% endblock %}
+{% block content %}
+<article class="container" style="max-width:800px;">
+  {% if saint.photo_url %}<img src="{{ saint.photo_url }}" style="border-radius:14px; margin-bottom:20px; max-height:400px; object-fit:cover; width:100%;" alt="{{ saint.name }}">{% endif %}
+  <h1 class="display" style="font-size:2.2rem;">{{ saint.name }}</h1>
+  {% if saint.alt_names %}<p style="opacity:0.6; font-size:0.9rem;">इतर नावे: {{ saint.alt_names }}</p>{% endif %}
+
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin:24px 0; background:var(--ivory-deep); border-radius:12px; padding:20px;">
+    {% if saint.birth_info %}<div><strong style="font-size:0.8rem; opacity:0.6;">जन्म</strong><br>{{ saint.birth_info }}</div>{% endif %}
+    {% if saint.samadhi_info %}<div><strong style="font-size:0.8rem; opacity:0.6;">समाधी</strong><br>{{ saint.samadhi_info }}</div>{% endif %}
+    {% if saint.birthplace %}<div><strong style="font-size:0.8rem; opacity:0.6;">जन्मस्थान</strong><br>{{ saint.birthplace }}</div>{% endif %}
+    {% if saint.tradition %}<div><strong style="font-size:0.8rem; opacity:0.6;">परंपरा</strong><br>{{ saint.tradition }}</div>{% endif %}
+  </div>
+
+  {% if saint.short_bio %}<p style="font-size:1.05rem; opacity:0.85;">{{ saint.short_bio }}</p>{% endif %}
+  {% if saint.full_bio %}<div style="white-space:pre-line; margin-top:20px; line-height:1.8;">{{ saint.full_bio }}</div>{% endif %}
+
+  {% if saint.teachings %}
+  <h3 style="margin-top:32px;">शिकवण</h3>
+  <div style="white-space:pre-line; line-height:1.8;">{{ saint.teachings }}</div>
+  {% endif %}
+
+  {% if saint.literary_works %}
+  <h3 style="margin-top:32px;">ग्रंथसंपदा</h3>
+  <div style="white-space:pre-line; line-height:1.8;">{{ saint.literary_works }}</div>
+  {% endif %}
+
+  {% if saint.important_places %}
+  <h3 style="margin-top:32px;">संबंधित स्थळे</h3>
+  <div style="white-space:pre-line; line-height:1.8;">{{ saint.important_places }}</div>
+  {% endif %}
+
+  <div style="margin-top:32px; padding:16px; background:var(--ivory-deep); border-radius:10px; font-size:0.82rem; opacity:0.7;">
+    ऐतिहासिक तपशील परंपरेनुसार बदलू शकतात. अचूक तारखांबाबत मतभेद असू शकतात.
+  </div>
+
+  {% if related %}
+  <div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span></div>
+  <h3>संबंधित संत</h3>
+  <div class="card-grid">
+    {% for r in related %}
+    <a class="post-card" href="{{ url_for('saints.detail', slug=r.slug) }}"><div class="card-body"><h3>{{ r.name }}</h3></div></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</article>
+{% endblock %}

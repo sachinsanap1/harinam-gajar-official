@@ -1,0 +1,28 @@
+{% extends "admin/base.html" %}
+{% block title %}Messages{% endblock %}
+{% block admin_content %}
+<h1>Contact Messages</h1>
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th>Name</th><th>Email</th><th>Subject</th><th>Received</th><th></th></tr>
+  {% for m in messages %}
+  <tr style="{{ 'font-weight:600;' if not m.is_read }}">
+    <td>{{ m.name }}</td><td>{{ m.email }}</td><td>{{ m.subject }}</td>
+    <td>{{ m.created_at.strftime('%d %b %Y') }}</td>
+    <td style="display:flex; gap:8px;">
+      {% if not m.is_read %}
+      <form method="POST" action="{{ url_for('admin.message_mark_read', msg_id=m.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);" type="submit">Mark read</button>
+      </form>
+      {% endif %}
+      <form method="POST" action="{{ url_for('admin.message_delete', msg_id=m.id) }}" onsubmit="return confirm('Delete this message?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--kumkum); border-color:var(--kumkum);" type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" style="opacity:0.6;">No messages yet.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

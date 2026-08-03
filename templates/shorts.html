@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>Shorts</h2></div>
+  <div class="card-grid">
+    {% for s in shorts %}
+    <a class="short-card" style="aspect-ratio:9/16;" href="{{ s.url }}" target="_blank" rel="noopener">
+      {% if s.thumbnail_url %}<img src="{{ s.thumbnail_url }}" alt="{{ s.title }}">{% endif %}
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">No shorts synced yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

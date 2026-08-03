@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Videos{% endblock %}
+{% block admin_content %}
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h1>Videos</h1>
+  <form method="POST" action="{{ url_for('admin.sync_videos') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-primary" type="submit" {% if sync_status.is_running %}disabled{% endif %}>
+      {% if sync_status.is_running %}⏳ Syncing…{% else %}🔄 Sync Now{% endif %}
+    </button>
+  </form>
+</div>
+<p style="opacity:0.65; font-size:0.9rem;">Videos are pulled automatically from the YouTube channel. Nothing here is entered by hand — use Sync Now to pull the latest uploads, shorts, and live status. Duplicate uploads are always skipped since each video is matched by its unique YouTube ID.</p>
+
+<div class="stat-card" style="margin:16px 0; max-width:520px;">
+  <div style="font-size:0.8rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em;">Sync Status</div>
+  {% if sync_status.last_run_at %}
+  <div style="margin-top:8px; font-size:0.9rem;">
+    <strong>Last run:</strong> {{ sync_status.last_run_at }}<br>
+    <strong>Status:</strong>
+    <span class="pill pill-{{ 'published' if sync_status.last_status == 'success' else 'draft' }}">{{ sync_status.last_status }}</span><br>
+    <strong>Added:</strong> {{ sync_status.added }} · <strong>Updated:</strong> {{ sync_status.updated }}
+    {% if sync_status.error %}<br><span style="color:var(--kumkum);">⚠ {{ sync_status.error }}</span>{% endif %}
+  </div>
+  {% else %}
+  <p style="opacity:0.6; margin-top:8px;">No sync has run yet.</p>
+  {% endif %}
+</div>
+
+<table class="admin-table" style="margin-top:16px;">
+  <tr><th></th><th>Title</th><th>Kind</th><th>Published</th><th>Views</th><th></th></tr>
+  {% for v in videos %}
+  <tr>
+    <td>{% if v.thumbnail_url %}<img src="{{ v.thumbnail_url }}" style="width:70px; border-radius:6px;">{% endif %}</td>
+    <td>{{ v.title }}{% if v.is_featured %} <span class="pill pill-published">Featured</span>{% endif %}</td>
+    <td>{{ v.kind }}</td>
+    <td>{{ v.published_at.strftime('%d %b %Y') if v.published_at else '' }}</td>
+    <td>{{ '{:,}'.format(v.view_count) }}</td>
+    <td>
+      <form method="POST" action="{{ url_for('admin.feature_video', video_id=v.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline" style="padding:4px 10px; font-size:0.75rem; color:var(--ink); border-color:var(--ink-soft);" type="submit">Set Featured</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" style="opacity:0.6;">No videos yet — click Sync Now once YOUTUBE_API_KEY is set in .env.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

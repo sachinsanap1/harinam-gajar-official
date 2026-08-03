@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit Saint' if saint else 'New Saint' }}{% endblock %}
+{% block admin_content %}
+<h1>{{ 'Edit Saint Profile' if saint else 'New Saint Profile' }}</h1>
+<p style="opacity:0.65; font-size:0.85rem; max-width:640px;">Use historically responsible wording. Leave a field blank rather than guessing — mark uncertain dates as such directly in the text (e.g. "c. 1275 (dates debated)").</p>
+<form method="POST" style="max-width:680px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-field"><label>Name</label><input type="text" name="name" value="{{ saint.name if saint else '' }}" required></div>
+  <div class="form-field"><label>URL slug (optional — auto-generated from name)</label><input type="text" name="slug" value="{{ saint.slug if saint else '' }}"></div>
+  <div class="form-field"><label>Alternative names</label><input type="text" name="alt_names" value="{{ saint.alt_names if saint else '' }}"></div>
+  <div class="form-field"><label>Photo URL</label><input type="text" name="photo_url" value="{{ saint.photo_url if saint else '' }}"></div>
+  <div class="form-field"><label>Tradition / category</label><input type="text" name="tradition" value="{{ saint.tradition if saint else '' }}" placeholder="e.g. Warkari"></div>
+  <div class="form-field"><label>Birth information</label><input type="text" name="birth_info" value="{{ saint.birth_info if saint else '' }}" placeholder="Mark uncertainty explicitly if applicable"></div>
+  <div class="form-field"><label>Samadhi information</label><input type="text" name="samadhi_info" value="{{ saint.samadhi_info if saint else '' }}"></div>
+  <div class="form-field"><label>Birthplace</label><input type="text" name="birthplace" value="{{ saint.birthplace if saint else '' }}"></div>
+  <div class="form-field"><label>Important places (one per line)</label><textarea name="important_places" rows="3">{{ saint.important_places if saint else '' }}</textarea></div>
+  <div class="form-field"><label>Short bio</label><textarea name="short_bio" rows="2">{{ saint.short_bio if saint else '' }}</textarea></div>
+  <div class="form-field"><label>Full biography</label><textarea name="full_bio" rows="10">{{ saint.full_bio if saint else '' }}</textarea></div>
+  <div class="form-field"><label>Teachings</label><textarea name="teachings" rows="4">{{ saint.teachings if saint else '' }}</textarea></div>
+  <div class="form-field"><label>Literary works / granthas (one per line)</label><textarea name="literary_works" rows="3">{{ saint.literary_works if saint else '' }}</textarea></div>
+  <div class="form-field"><label>SEO meta description</label><input type="text" name="meta_description" value="{{ saint.meta_description if saint else '' }}"></div>
+  <div class="form-field"><label><input type="checkbox" name="is_published" {% if not saint or saint.is_published %}checked{% endif %} style="width:auto;"> Published</label></div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

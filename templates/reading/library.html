@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}भक्ती संग्रह — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>भक्ती संग्रह</h2></div>
+  <p style="opacity:0.7; margin-top:-16px; margin-bottom:24px;">हरिपाठ, आरती, स्तोत्र आणि नामस्मरण कधीही वाचा.</p>
+
+  <form method="GET" style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q }}" placeholder="शीर्षक शोधा..." style="flex:1; min-width:200px; padding:10px 14px; border-radius:8px; border:1px solid var(--ivory-deep);">
+    <button class="btn btn-primary" type="submit">शोधा</button>
+  </form>
+  <div style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;">
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:8px 16px;" href="{{ url_for('reading.library') }}">सर्व</a>
+    {% for key, label in category_labels.items() %}
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:8px 16px;" href="{{ url_for('reading.library', category=key) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="card-grid">
+    {% for t in texts %}
+    <a class="post-card" href="{{ url_for('reading.detail', slug=t.slug) }}">
+      <div class="card-body">
+        <span class="pill pill-draft">{{ category_labels.get(t.category, t.category) }}</span>
+        <h3 style="margin-top:8px;">{{ t.title }}</h3>
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">अद्याप कोणताही मजकूर प्रकाशित झालेला नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

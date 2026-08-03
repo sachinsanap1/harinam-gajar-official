@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit Abhang' if abhang else 'New Abhang' }}{% endblock %}
+{% block admin_content %}
+<h1>{{ 'Edit Abhang' if abhang else 'New Abhang' }}</h1>
+<form method="POST" style="max-width:640px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-field">
+    <label>Abhang text (Marathi)</label>
+    <textarea name="text_marathi" rows="6" required>{{ abhang.text_marathi if abhang else '' }}</textarea>
+  </div>
+  <div class="form-field">
+    <label>Saint name (optional)</label>
+    <input type="text" name="saint_name" value="{{ abhang.saint_name if abhang else '' }}" placeholder="e.g. Sant Tukaram">
+  </div>
+  <div class="form-field">
+    <label>Source (optional)</label>
+    <input type="text" name="source" value="{{ abhang.source if abhang else '' }}" placeholder="e.g. Tukaram Gatha, Abhang No. 1234">
+  </div>
+  <div class="form-field">
+    <label><input type="checkbox" name="is_active" {% if not abhang or abhang.is_active %}checked{% endif %} style="width:auto;"> Active (included in daily rotation)</label>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

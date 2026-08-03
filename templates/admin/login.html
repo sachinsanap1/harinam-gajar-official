@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — Harinam Gajar</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background:var(--ink); min-height:100vh; display:flex; align-items:center; justify-content:center;">
+<div style="background:var(--paper); padding:40px; border-radius:16px; width:100%; max-width:380px; box-shadow: var(--shadow-soft);">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div style="font-family:var(--font-display); font-size:1.5rem;">हरिनाम गजर</div>
+    <div style="opacity:0.6; font-size:0.85rem;">Admin Panel</div>
+  </div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+  {% endwith %}
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-field">{{ form.email.label }} {{ form.email(placeholder="you@harinamgajar.com") }}</div>
+    <div class="form-field">{{ form.password.label }} {{ form.password() }}</div>
+    <div class="form-field"><label>{{ form.remember() }} {{ form.remember.label }}</label></div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" type="submit">Sign In</button>
+  </form>
+</div>
+</body>
+</html>

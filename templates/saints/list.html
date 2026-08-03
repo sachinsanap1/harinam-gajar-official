@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}संत चरित्र — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="section-head"><h2>संत चरित्र</h2></div>
+  <form method="GET" style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ q }}" placeholder="संताचे नाव शोधा..." style="flex:1; min-width:200px; padding:10px 14px; border-radius:8px; border:1px solid var(--ivory-deep);">
+    {% if traditions %}
+    <select name="tradition" style="padding:10px 14px; border-radius:8px; border:1px solid var(--ivory-deep);">
+      <option value="">सर्व परंपरा</option>
+      {% for t in traditions %}
+      <option value="{{ t }}" {% if t == tradition %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <button class="btn btn-primary" type="submit">शोधा</button>
+  </form>
+  <div class="card-grid">
+    {% for s in saints %}
+    <a class="post-card" href="{{ url_for('saints.detail', slug=s.slug) }}">
+      <div class="thumb-wrap">{% if s.photo_url %}<img src="{{ s.photo_url }}" alt="{{ s.name }}">{% endif %}</div>
+      <div class="card-body">
+        <h3>{{ s.name }}</h3>
+        {% if s.short_bio %}<p style="font-size:0.85rem; opacity:0.75;">{{ s.short_bio }}</p>{% endif %}
+      </div>
+    </a>
+    {% else %}
+    <p style="opacity:0.6;">अद्याप कोणतेही संत चरित्र जोडलेले नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

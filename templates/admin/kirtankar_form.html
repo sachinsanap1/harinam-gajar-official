@@ -1,0 +1,30 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit Kirtankar' if kirtankar else 'New Kirtankar' }}{% endblock %}
+{% block admin_content %}
+<h1>{{ 'Edit Kirtankar Profile' if kirtankar else 'New Kirtankar Profile' }}</h1>
+<form method="POST" style="max-width:680px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-field"><label>Full name</label><input type="text" name="full_name" value="{{ kirtankar.full_name if kirtankar else '' }}" required></div>
+  <div class="form-field"><label>Honorific / title</label><input type="text" name="honorific" value="{{ kirtankar.honorific if kirtankar else '' }}" placeholder="e.g. ह.भ.प."></div>
+  <div class="form-field"><label>URL slug (optional — auto-generated)</label><input type="text" name="slug" value="{{ kirtankar.slug if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Photo URL</label><input type="text" name="photo_url" value="{{ kirtankar.photo_url if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Short introduction</label><textarea name="short_intro" rows="2">{{ kirtankar.short_intro if kirtankar else '' }}</textarea></div>
+  <div class="form-field"><label>Full biography</label><textarea name="full_bio" rows="8">{{ kirtankar.full_bio if kirtankar else '' }}</textarea></div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+    <div class="form-field"><label>Village</label><input type="text" name="village" value="{{ kirtankar.village if kirtankar else '' }}"></div>
+    <div class="form-field"><label>District</label><input type="text" name="district" value="{{ kirtankar.district if kirtankar else '' }}"></div>
+    <div class="form-field"><label>State</label><input type="text" name="state" value="{{ kirtankar.state if kirtankar else '' }}"></div>
+  </div>
+  <div class="form-field"><label>Popular kirtans (one per line)</label><textarea name="popular_kirtans" rows="3">{{ kirtankar.popular_kirtans if kirtankar else '' }}</textarea></div>
+  <div class="form-field"><label>Special topics</label><textarea name="special_topics" rows="3">{{ kirtankar.special_topics if kirtankar else '' }}</textarea></div>
+  <div class="form-field"><label>YouTube URL</label><input type="text" name="youtube_url" value="{{ kirtankar.youtube_url if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Facebook URL</label><input type="text" name="facebook_url" value="{{ kirtankar.facebook_url if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Instagram URL</label><input type="text" name="instagram_url" value="{{ kirtankar.instagram_url if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Website URL</label><input type="text" name="website_url" value="{{ kirtankar.website_url if kirtankar else '' }}"></div>
+  <div class="form-field"><label>Contact info</label><input type="text" name="contact_info" value="{{ kirtankar.contact_info if kirtankar else '' }}"></div>
+  <div class="form-field"><label><input type="checkbox" name="is_contact_public" {% if kirtankar and kirtankar.is_contact_public %}checked{% endif %} style="width:auto;"> Show contact info publicly (only enable if the person has approved this)</label></div>
+  <div class="form-field"><label>SEO meta description</label><input type="text" name="meta_description" value="{{ kirtankar.meta_description if kirtankar else '' }}"></div>
+  <div class="form-field"><label><input type="checkbox" name="is_published" {% if not kirtankar or kirtankar.is_published %}checked{% endif %} style="width:auto;"> Published</label></div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

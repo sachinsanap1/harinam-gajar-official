@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}आजचा अभंग — {{ site_name }}{% endblock %}
+{% block content %}
+<section class="container" style="max-width:720px;">
+  <div class="section-head"><h2>आजचा अभंग</h2></div>
+  {% if abhang %}
+  <div class="quote-band">
+    <div class="mr" style="white-space:pre-line;">{{ abhang.text_marathi }}</div>
+    <p style="opacity:0.75; font-size:0.85rem;">
+      {%- if abhang.saint_name %}{{ abhang.saint_name }}{% endif %}
+      {%- if abhang.source %} · {{ abhang.source }}{% endif %}
+    </p>
+  </div>
+  {% if abhang.meaning %}
+  <div style="margin-top:20px; padding:18px; background:var(--ivory-deep); border-radius:12px;">
+    <strong style="font-size:0.85rem; opacity:0.6;">अर्थ</strong>
+    <p style="margin:6px 0 0; line-height:1.8;">{{ abhang.meaning }}</p>
+  </div>
+  {% endif %}
+  <div style="display:flex; gap:10px; margin-top:18px; flex-wrap:wrap;">
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="navigator.clipboard.writeText(document.querySelector('.mr').innerText); alert('कॉपी झाले.')">📋 Copy</button>
+    <button class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="navigator.share ? navigator.share({title: document.title, url: window.location.href}) : (navigator.clipboard.writeText(window.location.href), alert('लिंक कॉपी झाली.'))">🔗 Share</button>
+    <a class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" href="{{ url_for('abhang_public.archive') }}">📚 सर्व अभंग पहा</a>
+  </div>
+  <div style="display:flex; justify-content:space-between; margin-top:32px; padding-top:16px; border-top:1px solid var(--ivory-deep);">
+    {% if prev_abhang %}<a href="{{ url_for('abhang_public.view', abhang_id=prev_abhang.id) }}">← मागील</a>{% else %}<span></span>{% endif %}
+    {% if next_abhang %}<a href="{{ url_for('abhang_public.view', abhang_id=next_abhang.id) }}">पुढील →</a>{% endif %}
+  </div>
+  {% else %}
+  <p style="opacity:0.6;">अद्याप कोणताही अभंग जोडलेला नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
+  {% endif %}
+</section>
+{% endblock %}
