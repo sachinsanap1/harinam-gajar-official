@@ -6,6 +6,6 @@
     }
   },
   "crons": [
-    { "path": "/cron/sync-youtube", "schedule": "0 */6 * * *" }
+    { "path": "/cron/sync-youtube", "schedule": "0 3 * * *" }
   ]
 }
