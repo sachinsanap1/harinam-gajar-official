@@ -1,2 +1,8 @@
+[project]
+name = "harinam-gajar"
+version = "1.0.0"
+description = "Harinam Gajar Official Flask website"
+requires-python = ">=3.11"
+
 [tool.vercel.scripts]
 build = "python build.py"
