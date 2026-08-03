@@ -110,30 +110,119 @@ def audio(text_id):
     if not text.audio_data:
         abort(404)
 
-    # PostgreSQL BYTEA -> normal bytes
     data = bytes(text.audio_data)
 
-    if len(data) == 0:
+    if not data:
         abort(404)
 
-    # Your downloaded file is confirmed as MP3
+    total_length = len(data)
+
+    # The downloaded file was confirmed to be MP3
     mimetype = "audio/mpeg"
 
+    range_header = request.headers.get("Range")
+
+    # Full file request
+    if not range_header:
+
+        response = Response(
+            data,
+            status=200,
+            content_type=mimetype
+        )
+
+        response.headers["Content-Length"] = str(
+            total_length
+        )
+
+        response.headers["Accept-Ranges"] = "bytes"
+
+        response.headers["Content-Disposition"] = (
+            "inline"
+        )
+
+        response.headers["Cache-Control"] = (
+            "no-store"
+        )
+
+        return response
+
+    # Browser Range request
+    try:
+
+        range_value = (
+            range_header
+            .replace("bytes=", "")
+            .split(",")[0]
+            .strip()
+        )
+
+        start_text, end_text = (
+            range_value
+            .split("-", 1)
+        )
+
+        start = (
+            int(start_text)
+            if start_text
+            else 0
+        )
+
+        end = (
+            int(end_text)
+            if end_text
+            else total_length - 1
+        )
+
+        end = min(
+            end,
+            total_length - 1
+        )
+
+    except (
+        ValueError,
+        IndexError
+    ):
+
+        abort(416)
+
+    if (
+        start < 0
+        or start >= total_length
+        or end < start
+    ):
+
+        abort(416)
+
+    chunk = data[
+        start:end + 1
+    ]
+
     response = Response(
-        data,
-        status=200,
-        content_type=mimetype,
-        direct_passthrough=True,
+        chunk,
+        status=206,
+        content_type=mimetype
     )
 
-    response.headers["Content-Type"] = "audio/mpeg"
-    response.headers["Content-Length"] = str(len(data))
-    response.headers["Accept-Ranges"] = "bytes"
-    response.headers["Content-Disposition"] = "inline"
-    response.headers["Cache-Control"] = "no-store"
+    response.headers["Content-Range"] = (
+        f"bytes {start}-{end}/{total_length}"
+    )
 
-    return response
-    # =====================================================
+    response.headers["Content-Length"] = str(
+        len(chunk)
+    )
+
+    response.headers["Accept-Ranges"] = "bytes"
+
+    response.headers["Content-Disposition"] = (
+        "inline"
+    )
+
+    response.headers["Cache-Control"] = (
+        "no-store"
+    )
+
+    return response    # =====================================================
     # RANGE AUDIO RESPONSE
     # =====================================================
 
