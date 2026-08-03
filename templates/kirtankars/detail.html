@@ -27,7 +27,7 @@
     {% if kirtankar.photo_data %}
 
     <img
-      src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id) }}"
+      src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id, v=photo_version(kirtankar.photo_updated_at)) }}"
       style="
         width:160px;
         height:160px;
@@ -258,7 +258,34 @@
 
 
   <!-- Popular Kirtans -->
+  {% if kirtankar.videos %}
+
+  <h3 style="margin-top:32px;">
+    लोकप्रिय कीर्तने
+  </h3>
+
+  <div class="video-scroll-wrap">
+    <button class="scroll-arrow left" onclick="document.getElementById('kirtan-videos-scroll').scrollBy({left:-320, behavior:'smooth'})">‹</button>
+    <div class="video-scroll" id="kirtan-videos-scroll">
+      {% for kv in kirtankar.videos %}
+      <a class="video-card" href="{{ kv.youtube_url }}" target="_blank" rel="noopener">
+        <div class="thumb-wrap">
+          {% if kv.thumbnail_url %}<img src="{{ kv.thumbnail_url }}" alt="{{ kv.title }}">{% endif %}
+        </div>
+        <div class="card-body"><h3>{{ kv.title }}</h3></div>
+      </a>
+      {% endfor %}
+    </div>
+    <button class="scroll-arrow right" onclick="document.getElementById('kirtan-videos-scroll').scrollBy({left:320, behavior:'smooth'})">›</button>
+  </div>
+
   {% if kirtankar.popular_kirtans %}
+  <div style="white-space:pre-line; line-height:1.8; margin-top:16px; opacity:0.85;">
+    {{ kirtankar.popular_kirtans }}
+  </div>
+  {% endif %}
+
+  {% elif kirtankar.popular_kirtans %}
 
   <h3 style="margin-top:32px;">
     लोकप्रिय कीर्तने
