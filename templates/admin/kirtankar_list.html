@@ -11,7 +11,7 @@
   <tr>
     <td>
       {% if k.photo_data %}
-      <img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id) }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
+      <img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id, v=photo_version(k.photo_updated_at)) }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
       {% elif k.photo_url %}
       <img src="{{ k.photo_url }}" alt="{{ k.full_name }}" style="width:36px; height:36px; object-fit:cover; border-radius:50%;">
       {% endif %}
