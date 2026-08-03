@@ -2,12 +2,28 @@
 {% block title %}{{ 'Edit Kirtankar' if kirtankar else 'New Kirtankar' }}{% endblock %}
 {% block admin_content %}
 <h1>{{ 'Edit Kirtankar Profile' if kirtankar else 'New Kirtankar Profile' }}</h1>
-<form method="POST" style="max-width:680px;">
+<form method="POST" enctype="multipart/form-data" style="max-width:680px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="form-field"><label>Full name</label><input type="text" name="full_name" value="{{ kirtankar.full_name if kirtankar else '' }}" required></div>
   <div class="form-field"><label>Honorific / title</label><input type="text" name="honorific" value="{{ kirtankar.honorific if kirtankar else '' }}" placeholder="e.g. ह.भ.प."></div>
   <div class="form-field"><label>URL slug (optional — auto-generated)</label><input type="text" name="slug" value="{{ kirtankar.slug if kirtankar else '' }}"></div>
-  <div class="form-field"><label>Photo URL</label><input type="text" name="photo_url" value="{{ kirtankar.photo_url if kirtankar else '' }}"></div>
+  <div class="form-field">
+    <label>Photo</label>
+    {% if kirtankar and kirtankar.photo_data %}
+    <div style="margin-bottom:8px;">
+      <img src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id) }}" alt="{{ kirtankar.full_name }}"
+           style="width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);">
+    </div>
+    <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
+      <input type="checkbox" name="remove_photo" style="width:auto;"> Remove current photo
+    </label>
+    {% endif %}
+    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif">
+    <small style="opacity:0.6; display:block; margin-top:4px;">
+      JPEG, PNG, WEBP or GIF, up to 4 MB.
+      {% if kirtankar and kirtankar.photo_data %}Leave blank to keep the current photo.{% endif %}
+    </small>
+  </div>
   <div class="form-field"><label>Short introduction</label><textarea name="short_intro" rows="2">{{ kirtankar.short_intro if kirtankar else '' }}</textarea></div>
   <div class="form-field"><label>Full biography</label><textarea name="full_bio" rows="8">{{ kirtankar.full_bio if kirtankar else '' }}</textarea></div>
   <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
