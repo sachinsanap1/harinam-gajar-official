@@ -54,6 +54,13 @@ class Config:
     UPLOAD_FOLDER = os.path.join(basedir, "static", "uploads")
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
 
+    # --- Cloudinary (audio file storage — see services/cloudinary_upload.py) ---
+    # Get these three from your Cloudinary dashboard (cloudinary.com/console),
+    # top-right "Account Details" card. Set them in .env / Vercel env vars.
+    CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+
     # --- Session / security ---
     PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
     WTF_CSRF_ENABLED = True
