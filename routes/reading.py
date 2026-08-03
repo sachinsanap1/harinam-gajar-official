@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request, abort, Response
 from models import DevotionalText
 
 reading_bp = Blueprint("reading", __name__, url_prefix="/reading")
@@ -11,6 +11,49 @@ CATEGORY_LABELS = {
     "prayer": "प्रार्थना",
     "other": "इतर",
 }
+
+
+@reading_bp.route("/<int:text_id>/audio")
+def audio(text_id):
+    """
+    Streams a reading's audio straight out of the database (same reasoning
+    as kirtankars.photo — no writable disk on Vercel). Supports HTTP Range
+    requests so the browser's <audio> element can seek/scrub instead of
+    only being able to play from the start.
+    """
+    text = DevotionalText.query.get_or_404(text_id)
+    if not text.audio_data:
+        abort(404)
+    data = text.audio_data
+    mimetype = text.audio_mimetype or "audio/mpeg"
+    total_length = len(data)
+
+    range_header = request.headers.get("Range")
+    if not range_header:
+        return Response(
+            data, mimetype=mimetype,
+            headers={"Cache-Control": "public, max-age=31536000, immutable", "Accept-Ranges": "bytes"},
+        )
+
+    # Parse a single "bytes=start-end" range (the only form browsers send here).
+    try:
+        units, _, range_spec = range_header.partition("=")
+        start_str, _, end_str = range_spec.partition("-")
+        start = int(start_str) if start_str else 0
+        end = int(end_str) if end_str else total_length - 1
+        end = min(end, total_length - 1)
+    except ValueError:
+        abort(416)
+    if start > end or start >= total_length:
+        abort(416)
+
+    chunk = data[start:end + 1]
+    response = Response(chunk, status=206, mimetype=mimetype)
+    response.headers["Content-Range"] = f"bytes {start}-{end}/{total_length}"
+    response.headers["Accept-Ranges"] = "bytes"
+    response.headers["Content-Length"] = str(len(chunk))
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
 
 
 @reading_bp.route("/")
