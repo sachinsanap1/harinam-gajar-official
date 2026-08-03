@@ -10,7 +10,7 @@ from models import (
 from forms import PostForm
 from services.youtube_sync import full_sync, YouTubeSyncError, get_sync_status
 from services.abhang_rotation import set_todays_abhang, get_todays_abhang
-from services.cloudinary_upload import upload_audio, delete_audio, CloudinaryUploadError
+from services.cloudinary_upload import delete_audio
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -574,13 +574,13 @@ def reading_new():
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
-        try:
-            # Admin selects audio -> uploads to Cloudinary -> Cloudinary
-            # returns a URL -> we save only that URL (+ public_id).
-            audio_url, audio_public_id = upload_audio(request.files.get("audio"))
-        except CloudinaryUploadError as e:
-            flash(str(e), "error")
-            return render_template("admin/reading_form.html", text=None)
+        # The browser uploads the file directly to Cloudinary (see the JS
+        # in reading_form.html) and posts back only the resulting URL —
+        # the audio bytes never pass through this server, which matters
+        # because Vercel serverless functions reject any request body
+        # over ~4.5MB regardless of what MAX_CONTENT_LENGTH is set to.
+        audio_url = request.form.get("audio_url", "").strip() or None
+        audio_public_id = request.form.get("audio_public_id", "").strip() or None
         if not title or not content:
             flash("Title and text are both required.", "error")
         else:
@@ -609,11 +609,8 @@ def reading_edit(text_id):
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
-        try:
-            audio_url, audio_public_id = upload_audio(request.files.get("audio"))
-        except CloudinaryUploadError as e:
-            flash(str(e), "error")
-            return render_template("admin/reading_form.html", text=text)
+        audio_url = request.form.get("audio_url", "").strip() or None
+        audio_public_id = request.form.get("audio_public_id", "").strip() or None
         if not title or not content:
             flash("Title and text are both required.", "error")
         else:
@@ -622,9 +619,9 @@ def reading_edit(text_id):
             text.category = request.form.get("category", "other")
             text.content_marathi = content
             text.source = request.form.get("source", "").strip() or None
-            if audio_url:
-                # A new file was uploaded to Cloudinary — point at the new
-                # clip and clean up the old one (Cloudinary asset + any
+            if audio_url and audio_url != text.audio_url:
+                # The browser uploaded a new clip to Cloudinary — point at
+                # it and clean up the old one (Cloudinary asset + any
                 # legacy DB-stored bytes from before this switch).
                 delete_audio(text.audio_public_id)
                 text.audio_url = audio_url
@@ -638,7 +635,7 @@ def reading_edit(text_id):
                 text.audio_public_id = None
                 text.audio_data = None
                 text.audio_mimetype = None
-            # else: no file chosen and box not ticked -> keep existing audio as-is.
+            # else: no new upload and box not ticked -> keep existing audio as-is.
             text.order_index = request.form.get("order_index", 0, type=int)
             text.is_published = bool(request.form.get("is_published"))
             db.session.commit()
