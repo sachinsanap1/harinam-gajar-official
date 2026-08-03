@@ -19,6 +19,22 @@
   </div>
 </section>
 
+<section class="container" style="margin-top:24px;">
+  <div class="quote-band">
+    {% if todays_abhang %}
+    <div class="mr" style="white-space: pre-line;">{{ todays_abhang.text_marathi }}</div>
+    <p style="opacity:0.7; font-size:0.85rem;">
+      Today's Abhang
+      {%- if todays_abhang.saint_name %} — {{ todays_abhang.saint_name }}{% endif %}
+      {%- if todays_abhang.source %} · {{ todays_abhang.source }}{% endif %}
+    </p>
+    {% else %}
+    <div class="mr">No abhangs added yet.</div>
+    <p style="opacity:0.7; font-size:0.85rem;">Add some from Admin → Abhangs.</p>
+    {% endif %}
+  </div>
+</section>
+
 <div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span></div>
 
 <section class="container">
@@ -28,15 +44,19 @@
   </div>
   <p style="opacity:0.7; margin-top:-16px; margin-bottom:20px;">हरिपाठ, आरती, स्तोत्र आणि नामस्मरण कधीही वाचा.</p>
   {% if reading_highlights %}
-  <div class="card-grid">
-    {% for t in reading_highlights %}
-    <a class="post-card" href="{{ url_for('reading.detail', slug=t.slug) }}">
-      <div class="card-body">
-        <h3>{{ t.title }}</h3>
-        {% if t.audio_url %}<div class="card-meta">🎧 ऐका उपलब्ध</div>{% endif %}
-      </div>
-    </a>
-    {% endfor %}
+  <div class="video-scroll-wrap">
+    <button class="scroll-arrow left" onclick="document.getElementById('reading-scroll').scrollBy({left:-320, behavior:'smooth'})">‹</button>
+    <div class="video-scroll" id="reading-scroll">
+      {% for t in reading_highlights %}
+      <a class="post-card" href="{{ url_for('reading.detail', slug=t.slug) }}">
+        <div class="card-body">
+          <h3>{{ t.title }}</h3>
+          {% if t.audio_data or t.audio_url %}<div class="card-meta">🎧 ऐका उपलब्ध</div>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <button class="scroll-arrow right" onclick="document.getElementById('reading-scroll').scrollBy({left:320, behavior:'smooth'})">›</button>
   </div>
   {% else %}
   <p style="opacity:0.6;">अद्याप कोणताही मजकूर प्रकाशित झालेला नाही — अ‍ॅडमिन पॅनलमधून जोडा (<code>flask seed-reading-library</code> ने सुरुवात करता येईल).</p>
@@ -97,50 +117,26 @@
 <div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span></div>
 
 <section class="container">
-  <div class="quote-band">
-    {% if todays_abhang %}
-    <div class="mr" style="white-space: pre-line;">{{ todays_abhang.text_marathi }}</div>
-    <p style="opacity:0.7; font-size:0.85rem;">
-      Today's Abhang
-      {%- if todays_abhang.saint_name %} — {{ todays_abhang.saint_name }}{% endif %}
-      {%- if todays_abhang.source %} · {{ todays_abhang.source }}{% endif %}
-    </p>
-    {% else %}
-    <div class="mr">No abhangs added yet.</div>
-    <p style="opacity:0.7; font-size:0.85rem;">Add some from Admin → Abhangs.</p>
-    {% endif %}
-  </div>
-</section>
-
-{% if todays_vachan %}
-<section class="container" style="margin-top:24px;">
-  <div class="quote-band" style="background:linear-gradient(120deg, var(--kumkum), #8a1a15);">
-    <div class="mr" style="white-space: pre-line;">{{ todays_vachan.quote_text }}</div>
-    <p style="opacity:0.8; font-size:0.85rem;">आजचा संतविचार{% if todays_vachan.saint_name %} — {{ todays_vachan.saint_name }}{% endif %}</p>
-    {% if todays_vachan.meaning %}<p style="opacity:0.7; font-size:0.85rem; margin-top:8px;">{{ todays_vachan.meaning }}</p>{% endif %}
-  </div>
-</section>
-{% endif %}
-
-<div class="section-divider"><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span><span class="step"></span></div>
-
-<section class="container">
   <div class="section-head">
     <h2>कीर्तनकार व महाराज</h2>
     <a class="see-all" href="{{ url_for('kirtankars.list_kirtankars') }}">सर्व पहा →</a>
   </div>
   {% if featured_kirtankars %}
-  <div class="card-grid">
-    {% for k in featured_kirtankars %}
-    <a class="post-card" href="{{ url_for('kirtankars.detail', slug=k.slug) }}">
-      <div class="thumb-wrap">
-        {% if k.photo_data %}<img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id) }}" alt="{{ k.full_name }}">
-        {% elif k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">
-        {% endif %}
-      </div>
-      <div class="card-body"><h3>{% if k.honorific %}{{ k.honorific }} {% endif %}{{ k.full_name }}</h3></div>
-    </a>
-    {% endfor %}
+  <div class="video-scroll-wrap">
+    <button class="scroll-arrow left" onclick="document.getElementById('kirtankars-scroll').scrollBy({left:-320, behavior:'smooth'})">‹</button>
+    <div class="video-scroll" id="kirtankars-scroll">
+      {% for k in featured_kirtankars %}
+      <a class="post-card" href="{{ url_for('kirtankars.detail', slug=k.slug) }}">
+        <div class="thumb-wrap">
+          {% if k.photo_data %}<img src="{{ url_for('kirtankars.photo', kirtankar_id=k.id, v=photo_version(k.photo_updated_at)) }}" alt="{{ k.full_name }}">
+          {% elif k.photo_url %}<img src="{{ k.photo_url }}" alt="{{ k.full_name }}">
+          {% endif %}
+        </div>
+        <div class="card-body"><h3>{% if k.honorific %}{{ k.honorific }} {% endif %}{{ k.full_name }}</h3></div>
+      </a>
+      {% endfor %}
+    </div>
+    <button class="scroll-arrow right" onclick="document.getElementById('kirtankars-scroll').scrollBy({left:320, behavior:'smooth'})">›</button>
   </div>
   {% else %}
   <p style="opacity:0.6;">अद्याप कोणतेही प्रोफाइल जोडलेले नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
@@ -155,13 +151,21 @@
     <a class="see-all" href="{{ url_for('saints.list_saints') }}">सर्व पहा →</a>
   </div>
   {% if featured_saints %}
-  <div class="card-grid">
-    {% for s in featured_saints %}
-    <a class="post-card" href="{{ url_for('saints.detail', slug=s.slug) }}">
-      <div class="thumb-wrap">{% if s.photo_url %}<img src="{{ s.photo_url }}" alt="{{ s.name }}">{% endif %}</div>
-      <div class="card-body"><h3>{{ s.name }}</h3></div>
-    </a>
-    {% endfor %}
+  <div class="video-scroll-wrap">
+    <button class="scroll-arrow left" onclick="document.getElementById('saints-scroll').scrollBy({left:-320, behavior:'smooth'})">‹</button>
+    <div class="video-scroll" id="saints-scroll">
+      {% for s in featured_saints %}
+      <a class="post-card" href="{{ url_for('saints.detail', slug=s.slug) }}">
+        <div class="thumb-wrap">
+          {% if s.photo_data %}<img src="{{ url_for('saints.photo', saint_id=s.id, v=photo_version(s.photo_updated_at)) }}" alt="{{ s.name }}">
+          {% elif s.photo_url %}<img src="{{ s.photo_url }}" alt="{{ s.name }}">
+          {% endif %}
+        </div>
+        <div class="card-body"><h3>{{ s.name }}</h3></div>
+      </a>
+      {% endfor %}
+    </div>
+    <button class="scroll-arrow right" onclick="document.getElementById('saints-scroll').scrollBy({left:320, behavior:'smooth'})">›</button>
   </div>
   {% else %}
   <p style="opacity:0.6;">अद्याप कोणतेही संत चरित्र जोडलेले नाही — अ‍ॅडमिन पॅनलमधून जोडा.</p>
