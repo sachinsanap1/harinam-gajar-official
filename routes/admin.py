@@ -5,12 +5,11 @@ from werkzeug.datastructures import FileStorage
 from flask_login import login_required, current_user
 from models import (
     db, Video, Post, Category, Abhang, User,
-    SantProfile, KirtankarProfile, DevotionalText, SantVachan, ContactMessage,
+    SantProfile, KirtankarProfile, KirtankarVideo, DevotionalText, ContactMessage,
 )
 from forms import PostForm
 from services.youtube_sync import full_sync, YouTubeSyncError, get_sync_status
 from services.abhang_rotation import set_todays_abhang, get_todays_abhang
-from services.vachan_rotation import set_todays_vachan, get_todays_vachan
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -50,6 +49,12 @@ def clean_text(value):
 ALLOWED_PHOTO_MIMETYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_PHOTO_BYTES = 4 * 1024 * 1024  # 4 MB — keeps individual DB rows small
 
+ALLOWED_AUDIO_MIMETYPES = {
+    "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/aac",
+    "audio/ogg", "audio/wav", "audio/x-wav", "audio/webm",
+}
+MAX_AUDIO_BYTES = 15 * 1024 * 1024  # 15 MB — a few minutes of audio, keeps rows reasonable
+
 
 def read_uploaded_photo(file_storage: "FileStorage"):
     """
@@ -68,6 +73,45 @@ def read_uploaded_photo(file_storage: "FileStorage"):
     if len(data) > MAX_PHOTO_BYTES:
         raise ValueError("Photo is too large — please use an image under 4 MB.")
     return data, mimetype
+
+
+def read_uploaded_audio(file_storage: "FileStorage"):
+    """
+    Validate + read an uploaded audio file from request.files.get(...).
+    Returns (bytes, mimetype), or (None, None) if no file was chosen.
+    Raises ValueError with a user-facing message on invalid input.
+    """
+    if not file_storage or not file_storage.filename:
+        return None, None
+    mimetype = (file_storage.mimetype or "").lower()
+    if mimetype not in ALLOWED_AUDIO_MIMETYPES:
+        raise ValueError("Audio must be an MP3, M4A/AAC, OGG, WAV, or WEBM file.")
+    data = file_storage.read()
+    if not data:
+        return None, None
+    if len(data) > MAX_AUDIO_BYTES:
+        raise ValueError("Audio file is too large — please use a file under 15 MB.")
+    return data, mimetype
+
+
+def _parse_kirtankar_video_rows(form):
+    """
+    Reads the repeatable 'लोकप्रिय कीर्तने' rows (title + YouTube link) posted
+    from the kirtankar admin form as parallel arrays, skipping any row where
+    both fields are blank.
+    """
+    titles = form.getlist("kirtan_title[]")
+    urls = form.getlist("kirtan_youtube_url[]")
+    rows = []
+    for i, (title, url) in enumerate(zip(titles, urls)):
+        title = (title or "").strip()
+        url = (url or "").strip()
+        if not title and not url:
+            continue
+        if not title or not url:
+            raise ValueError("Each popular kirtan needs both a title and a YouTube link.")
+        rows.append((title, url, i))
+    return rows
 
 
 @admin_bp.before_request
@@ -327,6 +371,11 @@ def saint_list():
 def saint_new():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        try:
+            photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/saint_form.html", saint=None)
         if not name:
             flash("Saint name is required.", "error")
         else:
@@ -335,7 +384,9 @@ def saint_new():
                 name=name,
                 slug=slug,
                 alt_names=request.form.get("alt_names", "").strip() or None,
-                photo_url=request.form.get("photo_url", "").strip() or None,
+                photo_data=photo_data,
+                photo_mimetype=photo_mimetype,
+                photo_updated_at=datetime.utcnow() if photo_data else None,
                 tradition=request.form.get("tradition", "").strip() or None,
                 birth_info=request.form.get("birth_info", "").strip() or None,
                 samadhi_info=request.form.get("samadhi_info", "").strip() or None,
@@ -360,13 +411,28 @@ def saint_edit(saint_id):
     saint = SantProfile.query.get_or_404(saint_id)
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        try:
+            photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/saint_form.html", saint=saint)
         if not name:
             flash("Saint name is required.", "error")
         else:
             saint.name = name
             saint.slug = request.form.get("slug", "").strip() or slugify(name)
             saint.alt_names = request.form.get("alt_names", "").strip() or None
-            saint.photo_url = request.form.get("photo_url", "").strip() or None
+            if photo_data:
+                # A new file was uploaded — replace the stored photo.
+                saint.photo_data = photo_data
+                saint.photo_mimetype = photo_mimetype
+                saint.photo_updated_at = datetime.utcnow()
+            elif request.form.get("remove_photo"):
+                # "Remove current photo" was ticked and no replacement was given.
+                saint.photo_data = None
+                saint.photo_mimetype = None
+                saint.photo_updated_at = datetime.utcnow()
+            # else: no file chosen and box not ticked -> keep existing photo as-is.
             saint.tradition = request.form.get("tradition", "").strip() or None
             saint.birth_info = request.form.get("birth_info", "").strip() or None
             saint.samadhi_info = request.form.get("samadhi_info", "").strip() or None
@@ -408,6 +474,7 @@ def kirtankar_new():
         full_name = request.form.get("full_name", "").strip()
         try:
             photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+            video_rows = _parse_kirtankar_video_rows(request.form)
         except ValueError as e:
             flash(str(e), "error")
             return render_template("admin/kirtankar_form.html", kirtankar=None)
@@ -421,6 +488,7 @@ def kirtankar_new():
                 honorific=clean_text(request.form.get("honorific")),
                 photo_data=photo_data,
                 photo_mimetype=photo_mimetype,
+                photo_updated_at=datetime.utcnow() if photo_data else None,
                 short_intro=clean_text(request.form.get("short_intro")),
                 full_bio=clean_text(request.form.get("full_bio")),
                 village=clean_text(request.form.get("village")),
@@ -438,6 +506,11 @@ def kirtankar_new():
                 is_published=bool(request.form.get("is_published")),
             )
             db.session.add(kirtankar)
+            db.session.flush()  # assigns kirtankar.id, needed for the video rows below
+            for title, url, order_index in video_rows:
+                db.session.add(KirtankarVideo(
+                    kirtankar_id=kirtankar.id, title=title, youtube_url=url, order_index=order_index,
+                ))
             db.session.commit()
             flash("Kirtankar profile added.", "success")
             return redirect(url_for("admin.kirtankar_list"))
@@ -451,6 +524,7 @@ def kirtankar_edit(kirtankar_id):
         full_name = request.form.get("full_name", "").strip()
         try:
             photo_data, photo_mimetype = read_uploaded_photo(request.files.get("photo"))
+            video_rows = _parse_kirtankar_video_rows(request.form)
         except ValueError as e:
             flash(str(e), "error")
             return render_template("admin/kirtankar_form.html", kirtankar=kirtankar)
@@ -461,13 +535,18 @@ def kirtankar_edit(kirtankar_id):
             kirtankar.slug = request.form.get("slug", "").strip() or slugify(full_name)
             kirtankar.honorific = request.form.get("honorific", "").strip() or None
             if photo_data:
-                # A new file was uploaded — replace the stored photo.
+                # A new file was uploaded — replace the stored photo. photo_updated_at
+                # changes the photo URL's cache-busting query string, so the browser
+                # actually re-fetches the new image instead of showing the old one
+                # from cache (the photo route serves it with a 1-year cache header).
                 kirtankar.photo_data = photo_data
                 kirtankar.photo_mimetype = photo_mimetype
+                kirtankar.photo_updated_at = datetime.utcnow()
             elif request.form.get("remove_photo"):
                 # "Remove current photo" was ticked and no replacement was given.
                 kirtankar.photo_data = None
                 kirtankar.photo_mimetype = None
+                kirtankar.photo_updated_at = datetime.utcnow()
             # else: no file chosen and box not ticked -> keep existing photo as-is.
             kirtankar.short_intro = clean_text(request.form.get("short_intro"))
             kirtankar.full_bio = clean_text(request.form.get("full_bio"))
@@ -484,6 +563,12 @@ def kirtankar_edit(kirtankar_id):
             kirtankar.is_contact_public = bool(request.form.get("is_contact_public"))
             kirtankar.meta_description = clean_text(request.form.get("meta_description"))
             kirtankar.is_published = bool(request.form.get("is_published"))
+            # Replace the popular-kirtans video list wholesale with what was submitted.
+            KirtankarVideo.query.filter_by(kirtankar_id=kirtankar.id).delete()
+            for title, url, order_index in video_rows:
+                db.session.add(KirtankarVideo(
+                    kirtankar_id=kirtankar.id, title=title, youtube_url=url, order_index=order_index,
+                ))
             db.session.commit()
             flash("Kirtankar profile updated.", "success")
             return redirect(url_for("admin.kirtankar_list"))
@@ -513,6 +598,11 @@ def reading_new():
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
+        try:
+            audio_data, audio_mimetype = read_uploaded_audio(request.files.get("audio"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/reading_form.html", text=None)
         if not title or not content:
             flash("Title and text are both required.", "error")
         else:
@@ -523,7 +613,8 @@ def reading_new():
                 category=request.form.get("category", "other"),
                 content_marathi=content,
                 source=request.form.get("source", "").strip() or None,
-                audio_url=request.form.get("audio_url", "").strip() or None,
+                audio_data=audio_data,
+                audio_mimetype=audio_mimetype,
                 order_index=request.form.get("order_index", 0, type=int),
                 is_published=bool(request.form.get("is_published")),
             )
@@ -540,6 +631,11 @@ def reading_edit(text_id):
     if request.method == "POST":
         title = request.form.get("title", "").strip()
         content = request.form.get("content_marathi", "").strip()
+        try:
+            audio_data, audio_mimetype = read_uploaded_audio(request.files.get("audio"))
+        except ValueError as e:
+            flash(str(e), "error")
+            return render_template("admin/reading_form.html", text=text)
         if not title or not content:
             flash("Title and text are both required.", "error")
         else:
@@ -548,7 +644,15 @@ def reading_edit(text_id):
             text.category = request.form.get("category", "other")
             text.content_marathi = content
             text.source = request.form.get("source", "").strip() or None
-            text.audio_url = request.form.get("audio_url", "").strip() or None
+            if audio_data:
+                # A new file was uploaded — replace the stored audio.
+                text.audio_data = audio_data
+                text.audio_mimetype = audio_mimetype
+            elif request.form.get("remove_audio"):
+                # "Remove current audio" was ticked and no replacement was given.
+                text.audio_data = None
+                text.audio_mimetype = None
+            # else: no file chosen and box not ticked -> keep existing audio as-is.
             text.order_index = request.form.get("order_index", 0, type=int)
             text.is_published = bool(request.form.get("is_published"))
             db.session.commit()
@@ -564,72 +668,6 @@ def reading_delete(text_id):
     db.session.commit()
     flash("Reading deleted.", "success")
     return redirect(url_for("admin.reading_list"))
-
-
-# --------------------------------------------------------------------
-# Daily Sant Vachan manager
-# --------------------------------------------------------------------
-@admin_bp.route("/vachans")
-def vachan_list():
-    vachans = SantVachan.query.order_by(SantVachan.id.desc()).all()
-    todays_vachan = get_todays_vachan()
-    return render_template("admin/vachan_list.html", vachans=vachans, todays_vachan=todays_vachan)
-
-
-@admin_bp.route("/vachans/new", methods=["GET", "POST"])
-def vachan_new():
-    if request.method == "POST":
-        quote_text = request.form.get("quote_text", "").strip()
-        if not quote_text:
-            flash("Quote text is required.", "error")
-        else:
-            vachan = SantVachan(
-                quote_text=quote_text,
-                saint_name=request.form.get("saint_name", "").strip() or None,
-                meaning=request.form.get("meaning", "").strip() or None,
-                image_url=request.form.get("image_url", "").strip() or None,
-                is_active=bool(request.form.get("is_active")),
-            )
-            db.session.add(vachan)
-            db.session.commit()
-            flash("Sant Vachan added.", "success")
-            return redirect(url_for("admin.vachan_list"))
-    return render_template("admin/vachan_form.html", vachan=None)
-
-
-@admin_bp.route("/vachans/<int:vachan_id>/edit", methods=["GET", "POST"])
-def vachan_edit(vachan_id):
-    vachan = SantVachan.query.get_or_404(vachan_id)
-    if request.method == "POST":
-        quote_text = request.form.get("quote_text", "").strip()
-        if not quote_text:
-            flash("Quote text is required.", "error")
-        else:
-            vachan.quote_text = quote_text
-            vachan.saint_name = request.form.get("saint_name", "").strip() or None
-            vachan.meaning = request.form.get("meaning", "").strip() or None
-            vachan.image_url = request.form.get("image_url", "").strip() or None
-            vachan.is_active = bool(request.form.get("is_active"))
-            db.session.commit()
-            flash("Sant Vachan updated.", "success")
-            return redirect(url_for("admin.vachan_list"))
-    return render_template("admin/vachan_form.html", vachan=vachan)
-
-
-@admin_bp.route("/vachans/<int:vachan_id>/delete", methods=["POST"])
-def vachan_delete(vachan_id):
-    vachan = SantVachan.query.get_or_404(vachan_id)
-    db.session.delete(vachan)
-    db.session.commit()
-    flash("Sant Vachan deleted.", "success")
-    return redirect(url_for("admin.vachan_list"))
-
-
-@admin_bp.route("/vachans/<int:vachan_id>/set-today", methods=["POST"])
-def vachan_set_today(vachan_id):
-    set_todays_vachan(vachan_id)
-    flash("Today's Sant Vachan set. It will stay on the homepage until midnight.", "success")
-    return redirect(url_for("admin.vachan_list"))
 
 
 # --------------------------------------------------------------------
