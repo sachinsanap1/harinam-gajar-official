@@ -3,7 +3,8 @@
 {% block meta_description %}{{ saint.meta_description or saint.short_bio }}{% endblock %}
 {% block content %}
 <article class="container" style="max-width:800px;">
-  {% if saint.photo_url %}<img src="{{ saint.photo_url }}" style="border-radius:14px; margin-bottom:20px; max-height:400px; object-fit:cover; width:100%;" alt="{{ saint.name }}">{% endif %}
+  {% if saint.photo_data %}<img src="{{ url_for('saints.photo', saint_id=saint.id, v=photo_version(saint.photo_updated_at)) }}" style="border-radius:14px; margin-bottom:20px; max-height:400px; object-fit:cover; width:100%;" alt="{{ saint.name }}">
+  {% elif saint.photo_url %}<img src="{{ saint.photo_url }}" style="border-radius:14px; margin-bottom:20px; max-height:400px; object-fit:cover; width:100%;" alt="{{ saint.name }}">{% endif %}
   <h1 class="display" style="font-size:2.2rem;">{{ saint.name }}</h1>
   {% if saint.alt_names %}<p style="opacity:0.6; font-size:0.9rem;">इतर नावे: {{ saint.alt_names }}</p>{% endif %}
 
