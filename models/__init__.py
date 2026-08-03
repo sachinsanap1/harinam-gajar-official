@@ -305,8 +305,9 @@ class DevotionalText(db.Model):
     category = db.Column(db.String(60), nullable=False)   # haripath, aarti, stotra, namasmaran, prayer, other
     content_marathi = db.Column(db.Text, nullable=False)
     source = db.Column(db.String(200))
-    audio_url = db.Column(db.String(400))                  # legacy — old entries only, no longer editable via admin
-    audio_data = db.Column(db.LargeBinary, nullable=True)   # uploaded audio bytes (Vercel has no writable disk)
+    audio_url = db.Column(db.String(400))                  # Cloudinary secure_url (or a legacy external URL)
+    audio_public_id = db.Column(db.String(300), nullable=True)  # Cloudinary asset id — needed to replace/delete it
+    audio_data = db.Column(db.LargeBinary, nullable=True)   # legacy — old entries uploaded before the Cloudinary switch
     audio_mimetype = db.Column(db.String(100), nullable=True)
     order_index = db.Column(db.Integer, default=0)
     is_published = db.Column(db.Boolean, default=True)
