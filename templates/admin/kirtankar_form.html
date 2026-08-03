@@ -9,16 +9,22 @@
   <div class="form-field"><label>URL slug (optional — auto-generated)</label><input type="text" name="slug" value="{{ kirtankar.slug if kirtankar else '' }}"></div>
   <div class="form-field">
     <label>Photo</label>
-    {% if kirtankar and kirtankar.photo_data %}
     <div style="margin-bottom:8px;">
-      <img src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id) }}" alt="{{ kirtankar.full_name }}"
-           style="width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);">
+      <img id="photo-preview"
+           {% if kirtankar and kirtankar.photo_data %}
+           src="{{ url_for('kirtankars.photo', kirtankar_id=kirtankar.id, v=photo_version(kirtankar.photo_updated_at)) }}"
+           style="display:block; width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);"
+           {% else %}
+           style="display:none; width:96px; height:96px; object-fit:cover; border-radius:50%; border:2px solid var(--ivory-deep);"
+           {% endif %}
+           alt="{{ kirtankar.full_name if kirtankar else '' }}">
     </div>
+    {% if kirtankar and kirtankar.photo_data %}
     <label style="font-weight:normal; display:flex; align-items:center; gap:6px;">
       <input type="checkbox" name="remove_photo" style="width:auto;"> Remove current photo
     </label>
     {% endif %}
-    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif">
+    <input type="file" name="photo" id="photo-input" accept="image/jpeg,image/png,image/webp,image/gif">
     <small style="opacity:0.6; display:block; margin-top:4px;">
       JPEG, PNG, WEBP or GIF, up to 4 MB.
       {% if kirtankar and kirtankar.photo_data %}Leave blank to keep the current photo.{% endif %}
@@ -31,7 +37,25 @@
     <div class="form-field"><label>District</label><input type="text" name="district" value="{{ kirtankar.district if kirtankar else '' }}"></div>
     <div class="form-field"><label>State</label><input type="text" name="state" value="{{ kirtankar.state if kirtankar else '' }}"></div>
   </div>
-  <div class="form-field"><label>Popular kirtans (one per line)</label><textarea name="popular_kirtans" rows="3">{{ kirtankar.popular_kirtans if kirtankar else '' }}</textarea></div>
+  <div class="form-field"><label>Popular kirtans (one per line — a short description, optional)</label><textarea name="popular_kirtans" rows="3">{{ kirtankar.popular_kirtans if kirtankar else '' }}</textarea></div>
+
+  <div class="form-field">
+    <label>लोकप्रिय कीर्तने — YouTube links</label>
+    <small style="opacity:0.6; display:block; margin-bottom:8px;">Add a title and the YouTube link for each kirtan you want shown on the profile page.</small>
+    <div id="kirtan-video-rows">
+      {% if kirtankar and kirtankar.videos %}
+        {% for kv in kirtankar.videos %}
+        <div class="kirtan-video-row" style="display:flex; gap:8px; margin-bottom:8px;">
+          <input type="text" name="kirtan_title[]" value="{{ kv.title }}" placeholder="कीर्तनाचे नाव" style="flex:1;">
+          <input type="text" name="kirtan_youtube_url[]" value="{{ kv.youtube_url }}" placeholder="https://www.youtube.com/watch?v=..." style="flex:2;">
+          <button type="button" class="btn btn-outline" style="padding:4px 10px; color:var(--kumkum); border-color:var(--kumkum);" onclick="this.parentElement.remove()">✕</button>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <button type="button" class="btn btn-outline" style="color:var(--ink); border-color:var(--ink-soft); padding:6px 14px; font-size:0.85rem;" onclick="addKirtanVideoRow()">+ Add kirtan</button>
+  </div>
+
   <div class="form-field"><label>Special topics</label><textarea name="special_topics" rows="3">{{ kirtankar.special_topics if kirtankar else '' }}</textarea></div>
   <div class="form-field"><label>YouTube URL</label><input type="text" name="youtube_url" value="{{ kirtankar.youtube_url if kirtankar else '' }}"></div>
   <div class="form-field"><label>Facebook URL</label><input type="text" name="facebook_url" value="{{ kirtankar.facebook_url if kirtankar else '' }}"></div>
@@ -43,5 +67,34 @@
   <div class="form-field"><label><input type="checkbox" name="is_published" {% if not kirtankar or kirtankar.is_published %}checked{% endif %} style="width:auto;"> Published</label></div>
   <button class="btn btn-primary" type="submit">Save</button>
 </form>
+
+<script>
+// Show the newly-chosen photo immediately instead of the old (possibly
+// cached) one — fixes "edit always shows my old photo" by not relying on
+// the saved image at all until the form is actually submitted.
+document.getElementById('photo-input').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  const img = document.getElementById('photo-preview');
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (ev) {
+    img.src = ev.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+function addKirtanVideoRow() {
+  const wrap = document.getElementById('kirtan-video-rows');
+  const row = document.createElement('div');
+  row.className = 'kirtan-video-row';
+  row.style.cssText = 'display:flex; gap:8px; margin-bottom:8px;';
+  row.innerHTML =
+    '<input type="text" name="kirtan_title[]" placeholder="कीर्तनाचे नाव" style="flex:1;">' +
+    '<input type="text" name="kirtan_youtube_url[]" placeholder="https://www.youtube.com/watch?v=..." style="flex:2;">' +
+    '<button type="button" class="btn btn-outline" style="padding:4px 10px; color:var(--kumkum); border-color:var(--kumkum);" onclick="this.parentElement.remove()">✕</button>';
+  wrap.appendChild(row);
+}
+</script>
 {% endblock %}
 
