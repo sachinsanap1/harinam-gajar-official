@@ -113,14 +113,11 @@
 
 
         <!-- Audio player -->
-        
-        {% if text.audio_data is not none %}
-        
+
         <audio
             controls
             preload="metadata"
             src="{{ url_for('reading.audio', text_id=text.id) }}"
-            type="{{ text.audio_mimetype or 'audio/mpeg' }}"
             style="
                 width:100%;
                 max-width:500px;
@@ -129,8 +126,6 @@
         >
             Your browser does not support audio.
         </audio>
-        
-        {% endif %}
     </div>
 
 
