@@ -114,27 +114,33 @@
 
         <!-- Audio player -->
 
-    {% if text.audio_data %}
-    <audio
-        controls
-        preload="auto"
-        src="{{ url_for('reading.audio', text_id=text.id) }}"
-        style="height:32px; max-width:100%;"
-    >
-        Your browser does not support audio.
-    </audio>
-    
-    {% elif text.audio_url %}
-    <audio
-        controls
-        preload="auto"
-        src="{{ text.audio_url }}"
-        style="height:32px; max-width:100%;"
-    >
-        Your browser does not support audio.
-    </audio>
-    {% endif %}
-
+        {% if text.audio_data %}
+        <audio
+            id="reading-audio"
+            controls
+            preload="metadata"
+            style="height:40px; width:100%; max-width:500px;"
+        >
+            <source
+                src="{{ url_for('reading.audio', text_id=text.id) }}?v={{ text.id }}"
+                type="audio/mpeg"
+            >
+            Your browser does not support audio.
+        </audio>
+        
+        {% elif text.audio_url %}
+        <audio
+            id="reading-audio"
+            controls
+            preload="metadata"
+            style="height:40px; width:100%; max-width:500px;"
+        >
+            <source
+                src="{{ text.audio_url }}"
+            >
+            Your browser does not support audio.
+        </audio>
+        {% endif %}
     </div>
 
 
