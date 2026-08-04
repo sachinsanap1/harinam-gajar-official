@@ -86,12 +86,19 @@ def migrate_db_route():
     inspector = inspect(db.engine)
     existing_tables = inspector.get_table_names()
 
+    dialect = db.engine.dialect.name  # 'postgresql', 'mysql', or 'sqlite'
+    TYPE_MAP = {
+        "BLOB": {"postgresql": "BYTEA"},
+        "DATETIME": {"postgresql": "TIMESTAMP"},
+    }
+
     def add_column_if_missing(table, column, ddl_type):
         if table not in existing_tables:
             return
         cols = {c["name"] for c in inspector.get_columns(table)}
         if column not in cols:
-            db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}"))
+            real_type = TYPE_MAP.get(ddl_type, {}).get(dialect, ddl_type)
+            db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {real_type}"))
             log.append(f"added {table}.{column}")
 
     try:
