@@ -194,12 +194,22 @@ def register_cli(app):
         inspector = inspect(db.engine)
         existing_tables = inspector.get_table_names()
 
+        # BLOB/DATETIME are MySQL/SQLite spellings — Postgres (e.g. Neon)
+        # uses BYTEA/TIMESTAMP instead and would reject the MySQL ones
+        # with a syntax error. Map to whichever dialect is actually in use.
+        dialect = db.engine.dialect.name  # 'postgresql', 'mysql', or 'sqlite'
+        TYPE_MAP = {
+            "BLOB": {"postgresql": "BYTEA"},
+            "DATETIME": {"postgresql": "TIMESTAMP"},
+        }
+
         def add_column_if_missing(table, column, ddl_type):
             if table not in existing_tables:
                 return
             cols = {c["name"] for c in inspector.get_columns(table)}
             if column not in cols:
-                db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}"))
+                real_type = TYPE_MAP.get(ddl_type, {}).get(dialect, ddl_type)
+                db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {real_type}"))
                 click.echo(f"  + {table}.{column}")
 
         add_column_if_missing("sant_profiles", "photo_data", "BLOB")
