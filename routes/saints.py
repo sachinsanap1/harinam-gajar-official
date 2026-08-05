@@ -1,3 +1,4 @@
+import unicodedata
 from flask import Blueprint, render_template, request, abort, Response
 from models import SantProfile
 
@@ -44,6 +45,7 @@ def list_saints():
 
 @saints_bp.route("/<slug>")
 def detail(slug):
+    slug = unicodedata.normalize("NFC", slug).strip()
     saint = SantProfile.query.filter_by(slug=slug, is_published=True).first()
     if not saint:
         abort(404)
