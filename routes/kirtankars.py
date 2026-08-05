@@ -1,3 +1,4 @@
+import unicodedata
 from flask import Blueprint, render_template, request, abort, Response
 from models import db, KirtankarProfile
 
@@ -43,6 +44,9 @@ def list_kirtankars():
 
 @kirtankars_bp.route("/<slug>")
 def detail(slug):
+    # NFC-normalize — see routes/admin.py's slugify() for why this matters
+    # for Devanagari text specifically.
+    slug = unicodedata.normalize("NFC", slug).strip()
     kirtankar = KirtankarProfile.query.filter_by(slug=slug, is_published=True).first()
     if not kirtankar:
         abort(404)
