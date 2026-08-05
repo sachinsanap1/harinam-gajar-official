@@ -163,7 +163,8 @@ def register_scheduler(app):
 
 def slugify_for_seed(text):
     import re as _re
-    text = text.lower().strip()
+    import unicodedata as _ud
+    text = _ud.normalize("NFC", text).lower().strip()
     text = _re.sub(r"[^\w\s\u0900-\u097F-]", "", text)
     return _re.sub(r"[\s_-]+", "-", text).strip("-")
 
