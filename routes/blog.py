@@ -1,3 +1,4 @@
+import unicodedata
 from datetime import datetime
 from flask import Blueprint, render_template, request, abort
 from models import Post, Category, Tag
@@ -17,6 +18,12 @@ def list_posts():
     page = request.args.get("page", 1, type=int)
     category_slug = request.args.get("category")
     tag_slug = request.args.get("tag")
+    # NFC-normalize — see routes/admin.py's slugify() for why Devanagari
+    # slugs need this to match reliably.
+    if category_slug:
+        category_slug = unicodedata.normalize("NFC", category_slug).strip()
+    if tag_slug:
+        tag_slug = unicodedata.normalize("NFC", tag_slug).strip()
 
     query = _published_query()
     if category_slug:
@@ -31,6 +38,7 @@ def list_posts():
 
 @blog_bp.route("/<slug>")
 def detail(slug):
+    slug = unicodedata.normalize("NFC", slug).strip()
     post = _published_query().filter(Post.slug == slug).first()
     if not post:
         abort(404)
