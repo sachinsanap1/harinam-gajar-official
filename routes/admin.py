@@ -12,6 +12,7 @@ from forms import PostForm
 from services.youtube_sync import full_sync, YouTubeSyncError, get_sync_status
 from services.abhang_rotation import set_todays_abhang, get_todays_abhang
 from services.cloudinary_upload import delete_audio
+from services.transliterate import transliterate_devanagari
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -20,16 +21,20 @@ def slugify(text):
     # NFC-normalize first: Devanagari text can arrive "composed" (one
     # codepoint per visible character) or "decomposed" (base letter +
     # separate combining matra) depending on how it was typed/pasted —
-    # they look 100% identical on screen but are different bytes, so a
-    # slug generated from one form won't byte-match a URL sent in the
-    # other form. Normalizing to NFC here (and again wherever a slug
-    # from a URL is looked up — see routes/reading.py, kirtankars.py,
-    # saints.py) makes sure both sides always agree.
+    # they look 100% identical on screen but are different bytes. Then
+    # transliterate to Roman script — Vercel's Python runtime doesn't
+    # reliably pass non-ASCII characters through in the URL *path* down
+    # to Flask (confirmed via /cron/debug-reading-slug: identical slugs
+    # matched perfectly in the DB, but the live page still 404'd — an
+    # English-only slug for the same row worked immediately). The page's
+    # visible title is unaffected; only the URL becomes ASCII-safe.
     text = unicodedata.normalize("NFC", text).lower().strip()
-    # Keep word chars, spaces, hyphens, AND the Devanagari block explicitly —
-    # \w alone strips Marathi matras/virama (combining marks), garbling slugs
-    # like "श्री" -> "शर". Whitelisting U+0900-U+097F keeps them intact.
-    text = re.sub(r"[^\w\s\u0900-\u097F-]", "", text)
+    text = transliterate_devanagari(text)
+    # Anything the transliteration table doesn't cover (Devanagari
+    # punctuation like ॥ danda marks, rare marks) — drop it rather than
+    # keep it, since any leftover non-ASCII character defeats the whole
+    # point of transliterating in the first place.
+    text = re.sub(r"[^\w\s-]", "", text)
     return re.sub(r"[\s_-]+", "-", text).strip("-")
 
 
