@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from werkzeug.datastructures import FileStorage
@@ -16,7 +17,15 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 
 def slugify(text):
-    text = text.lower().strip()
+    # NFC-normalize first: Devanagari text can arrive "composed" (one
+    # codepoint per visible character) or "decomposed" (base letter +
+    # separate combining matra) depending on how it was typed/pasted —
+    # they look 100% identical on screen but are different bytes, so a
+    # slug generated from one form won't byte-match a URL sent in the
+    # other form. Normalizing to NFC here (and again wherever a slug
+    # from a URL is looked up — see routes/reading.py, kirtankars.py,
+    # saints.py) makes sure both sides always agree.
+    text = unicodedata.normalize("NFC", text).lower().strip()
     # Keep word chars, spaces, hyphens, AND the Devanagari block explicitly —
     # \w alone strips Marathi matras/virama (combining marks), garbling slugs
     # like "श्री" -> "शर". Whitelisting U+0900-U+097F keeps them intact.
