@@ -164,8 +164,10 @@ def register_scheduler(app):
 def slugify_for_seed(text):
     import re as _re
     import unicodedata as _ud
+    from services.transliterate import transliterate_devanagari as _translit
     text = _ud.normalize("NFC", text).lower().strip()
-    text = _re.sub(r"[^\w\s\u0900-\u097F-]", "", text)
+    text = _translit(text)
+    text = _re.sub(r"[^\w\s-]", "", text)
     return _re.sub(r"[\s_-]+", "-", text).strip("-")
 
 
