@@ -151,13 +151,36 @@ def debug_reading_slug():
             "codepoints": [f"U+{ord(c):04X}" for c in s],
         }
 
-    rows = DevotionalText.query.with_entities(DevotionalText.id, DevotionalText.title, DevotionalText.slug).all()
+    rows = DevotionalText.query.with_entities(
+        DevotionalText.id, DevotionalText.title, DevotionalText.slug, DevotionalText.is_published
+    ).all()
+
+    # Run the *exact* query routes/reading.py's detail() runs, so we see
+    # specifically whether that one succeeds or not — not just a raw
+    # slug comparison.
+    production_query_result = DevotionalText.query.filter_by(slug=incoming, is_published=True).first()
+
+    # Also check which route Flask's URL map actually resolves /reading/<slug>
+    # to — rules out something else (a static handler, a catch-all, a
+    # duplicate registration) intercepting before reaching reading.detail.
+    from flask import current_app
+    try:
+        adapter = current_app.url_map.bind(request.host)
+        endpoint, args = adapter.match(f"/reading/{incoming}", method="GET")
+        route_resolution = {"endpoint": endpoint, "args": args}
+    except Exception as e:
+        route_resolution = {"error": str(e)}
 
     return jsonify({
         "incoming_slug": describe(incoming),
         "exact_match_found": any(r.slug == incoming for r in rows),
+        "production_query_result": (
+            {"id": production_query_result.id, "title": production_query_result.title}
+            if production_query_result else None
+        ),
+        "route_resolution": route_resolution,
         "all_stored_slugs": [
-            {"id": r.id, "title": r.title, **describe(r.slug)}
+            {"id": r.id, "title": r.title, "is_published": r.is_published, **describe(r.slug)}
             for r in rows
         ],
     })
