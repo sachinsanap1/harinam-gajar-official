@@ -1,3 +1,4 @@
+import unicodedata
 from flask import Blueprint, render_template, request, abort, Response
 from models import DevotionalText
 
@@ -93,7 +94,11 @@ def library():
 # Replace your old detail() function with this one
 @reading_bp.route("/<slug>")
 def detail(slug):
-    slug = slug.strip()
+    # NFC-normalize the slug from the URL — see the comment on slugify()
+    # in routes/admin.py for why Devanagari text needs this to match
+    # reliably (composed vs decomposed combining marks look identical
+    # but are different bytes otherwise).
+    slug = unicodedata.normalize("NFC", slug).strip()
 
     text = DevotionalText.query.filter_by(
         slug=slug,
