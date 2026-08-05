@@ -122,3 +122,42 @@ def migrate_db_route():
         return jsonify({"ok": False, "error": str(e), "done_so_far": log}), 500
 
     return jsonify({"ok": True, "changes": log or ["nothing to do — already up to date"]})
+
+
+@cron_bp.route("/debug-reading-slug")
+def debug_reading_slug():
+    """
+    Temporary diagnostic — shows the exact Unicode codepoints of the slug
+    received in the URL vs. every reading-library slug stored in the DB,
+    so an invisible mismatch (extra character, different Unicode form,
+    etc.) shows up directly instead of us guessing from how text *looks*.
+
+    Visit (with your real CRON_SECRET):
+        /cron/debug-reading-slug?slug=हनुमान-चालीसा&secret=<CRON_SECRET>
+
+    Safe to remove this route once the mismatch is found and fixed.
+    """
+    if not _authorized():
+        return jsonify({"error": "Unauthorized. Set CRON_SECRET and pass it as ?secret=."}), 401
+
+    from models import DevotionalText
+
+    incoming = request.args.get("slug", "")
+
+    def describe(s):
+        return {
+            "text": s,
+            "length": len(s),
+            "codepoints": [f"U+{ord(c):04X}" for c in s],
+        }
+
+    rows = DevotionalText.query.with_entities(DevotionalText.id, DevotionalText.title, DevotionalText.slug).all()
+
+    return jsonify({
+        "incoming_slug": describe(incoming),
+        "exact_match_found": any(r.slug == incoming for r in rows),
+        "all_stored_slugs": [
+            {"id": r.id, "title": r.title, **describe(r.slug)}
+            for r in rows
+        ],
+    })
